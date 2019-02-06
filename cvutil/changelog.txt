@@ -1,0 +1,70 @@
+version 1.3
+-----------
+New features:
+* Optimization can be optionally disabled when initializing cvutil
+  library.
+* Added license information to source code.
+
+Fixes:
+* cvutil_core.cpp:getConnectedComponents() - The function is fixed to 
+  perform connected components using either 4 or 8 connectivity.
+* stdproto.h: Removed unneeded APIs - pthread and pylon references.
+* Converted code to use native C++ threading.
+* cvutil_bwdist.cpp: The algorithm now creates threads based on the 
+  number of logical cores on the system.
+* cvutil_bwskel.cpp: Rearranged and added AVX 2.0 optimization code 
+  to location::isridge() for faster execution.
+* cvutil_bwskel.cpp: Added location::xh8() to count 8-connected 
+  components in adjacent pixels (Ref: Guo-Hall Thinning algorithm).
+* cvutil_bwskel.cpp:bwskel() Fixed performance bugs where the program 
+  took unusually longer time to skeletonize when the images were 
+  thresholded at various levels.
+* cvutil_core:getLargestConnectedComponent() The function now returns
+  an 8-bit pixel size zero matrix with one pixel when no maximum value 
+  is found, to prevent crash in functions where an 8-bit matrices are 
+  expected.
+* cvutil_core.cpp:bwskel() The function is fixed to pass exact precise
+  distance transform without rounding.
+* cvutil_core.cpp:addBorder() The function is fixed to honor thickness
+  argument when adding border pixels to a single channel image.
+* cvutil_matlab_interface:FloorCeilFunctions All the functiona in the 
+  namespace is modified to check for CPU_AVX2 instead of CPU_AVX for 
+  vector processing.
+* cvutil_videowriter.h: Fixed include guards and dead web link.
+* demo.h: Fixed to use C++ random_device instead of rand() for longer
+  periodicity.
+
+version 1.2
+-----------
+New features:
+* Added Macros in stdproto.h to aid in detection of memory leaks
+  in the source code.
+* Implemented precise euclidean distance transform in cvutil_bwdist.cpp
+* Implemented ridge detection on distance transforms in cvutil_bwskel. 
+  Also, numerous rules were implemented to generate a connected skeleton 
+  for each connected component in the binary image.
+
+Fixes:
+* cvutil_matlab_interface.cpp:cvutil::floor() and cvutil::ceil() - Fixed 
+  the functions where they return empty matrices when a matrix of double
+  precision floating-point values (CV_64F) are passed.
+
+Version 1.1
+-----------
+New feature:
+* Added functionality to create videos from processed images
+  using two new classes, DefaultVideoWriter and FrameWriter.
+
+Fixes:
+* ind2sub() fixed to correctly generate subscripts when the 
+  number of channels is one.
+* window() fails when a matrix of different size is passed
+  using the same window name that was used earlier.
+* bwskel() wrongly creates skeleton due to floating point
+  inaccuracies from the distance transform.
+* Fixed ForEachFileInPath() to parse the list of image file 
+  names in natural sorting.
+
+Version 1.0
+-----------
+Initial creation.
