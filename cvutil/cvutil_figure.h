@@ -1,23 +1,25 @@
-/*  Copyright (C) 2018-2019 Noble Research Institute, LLC
+/*  Copyright (C) 2018-2020 Noble Research Institute, LLC
 
 File: cvutil_figure.h
 
 Author: Anand Seethepalli (aseethepalli@noble.org)
-Principal Investigator: Larry York (lmyork@noble.org)
+Assistant Professor: Larry York (lmyork@noble.org)
 Root Phenomics Lab
 Noble Research Institute, LLC
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
-cvutil is free software: you can redistribute it and/or modify
-it under the terms of the NOBLE RESEARCH INSTITUTE, GENERAL PUBLIC LICENSE.
+cvutil is free software. You can redistribute it and/or modify
+it as permissible under the terms of the Noble General Public
+License as published by the Noble Research Institute, LLC. This
+license is available at the following link.
 
 cvutil is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-NOBLE RESEARCH INSTITUTE GENERAL PUBLIC LICENSE for more details.
+Noble General Public License for more details.
 
-You should have received a copy of the Noble Research Institute General Public License
+You should have received a copy of the Noble General Public License
 along with cvutil.  If not, see <https://github.com/noble-research-institute/cvutil/blob/master/LICENSE>.
 */
 
@@ -46,6 +48,7 @@ namespace cvutil
         int figno;
         int precision;
         bool holding;
+        bool holdon = false;
 
         // UI controls
         
@@ -62,6 +65,9 @@ namespace cvutil
         std::vector<cv::Mat> cvimages;
         std::vector<double> xratio, yratio;
 
+        //QBarCategoryAxis *xaxis = nullptr;
+        //QValueAxis *yaxis = nullptr;
+
         // Mouse operating modes
         enum class MouseModes { Pointer, Pan, Zoom, Callout };
         MouseModes mode;
@@ -77,7 +83,8 @@ namespace cvutil
 
         // Bar plot data
         void barplot(cv::Mat x, std::vector<std::string> categories, cv::Mat y, std::vector<std::string> groups = std::vector<std::string>());
-        
+        void stackedbarplot(cv::Mat x, std::vector<std::string> categories, cv::Mat y, std::vector<std::string> groups = std::vector<std::string>());
+
         void imshowplot(QImage &img);
 
         // To make window for plotting. Also creates basic signals & slots 
@@ -85,7 +92,7 @@ namespace cvutil
         void makewindow();
 
         // Get ranges of y-values to be fit properly in a chart.
-        std::pair<QVariant, QVariant> getRange(cv::Mat vals);
+        std::pair<qreal, qreal> getRange(cv::Mat vals);
 
         // Save file from Save File Dialog
         bool saveFile(const QString &fileName);
@@ -113,8 +120,8 @@ namespace cvutil
 
 
         // Plotting functions
-        void bar(cv::InputArray x, cv::InputArray y = cv::noArray(), std::vector<std::string> groups = std::vector<std::string>());
-        void bar(std::vector<std::string> &x, cv::InputArray y, std::vector<std::string> groups = std::vector<std::string>());
+        void bar(cv::InputArray x, cv::InputArray y = cv::noArray(), std::vector<std::string> groups = std::vector<std::string>(), std::string style = "grouped");
+        void bar(std::vector<std::string> &x, cv::InputArray y, std::vector<std::string> groups = std::vector<std::string>(), std::string style = "grouped");
 
         void scatter(cv::InputArray x, cv::InputArray y = cv::noArray(), std::vector<std::string> groups = std::vector<std::string>());
         
@@ -125,12 +132,20 @@ namespace cvutil
 
         // Titles and labels
         void title(std::string txt);
-        void xlabel(std::string lab);
-        void ylabel(std::string lab);
+        void xlabel(std::string lab, int fontSize = 13, std::string fontWeight = "normal");
+        void ylabel(std::string lab, int fontSize = 13, std::string fontWeight = "normal");
         void showgrid(bool on);
+
+        void hold(bool on);
         // User event handler
         //virtual bool event(QEvent *ev);
+
+        // Returns the chart widget so as to make it embeddable
+        // to other UI windows.
+        // Get chart for advanced customizations.
         
+        QChart* getChart();
+        void show();
         void wait();
 
         void release();

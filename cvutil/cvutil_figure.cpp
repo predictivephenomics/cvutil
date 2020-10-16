@@ -1,27 +1,30 @@
-/*  Copyright (C) 2018-2019 Noble Research Institute, LLC
+/*  Copyright (C) 2018-2020 Noble Research Institute, LLC
 
 File: cvutil_figure.cpp
 
 Author: Anand Seethepalli (aseethepalli@noble.org)
-Principal Investigator: Larry York (lmyork@noble.org)
+Assistant Professor: Larry York (lmyork@noble.org)
 Root Phenomics Lab
 Noble Research Institute, LLC
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
-cvutil is free software: you can redistribute it and/or modify
-it under the terms of the NOBLE RESEARCH INSTITUTE, GENERAL PUBLIC LICENSE.
+cvutil is free software. You can redistribute it and/or modify
+it as permissible under the terms of the Noble General Public
+License as published by the Noble Research Institute, LLC. This
+license is available at the following link.
 
 cvutil is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-NOBLE RESEARCH INSTITUTE GENERAL PUBLIC LICENSE for more details.
+Noble General Public License for more details.
 
-You should have received a copy of the Noble Research Institute General Public License
+You should have received a copy of the Noble General Public License
 along with cvutil.  If not, see <https://github.com/noble-research-institute/cvutil/blob/master/LICENSE>.
 */
 
 #include "cvutil_figure.h"
+#include "MainWindow/logger.h"
 
 // These macros may be defined when Windows.h is included prior to
 // including Qt headers. It is necessary to undefine them before
@@ -40,6 +43,7 @@ along with cvutil.  If not, see <https://github.com/noble-research-institute/cvu
 
 #include <QtCharts/QChartView>
 #include <QtCharts/QBarSeries>
+#include <QtCharts/QStackedBarSeries>
 #include <QtCharts/QBarSet>
 #include <QtCharts/QLegend>
 #include <QtCharts/QCategoryAxis>
@@ -98,10 +102,19 @@ void figure_impl::barplot(Mat x, vector<string> categories, Mat y, vector<string
     for (int i = 0; i < y.cols; i++)
         series->append(sets[i]);
     
-    QChart *barchart = new QChart();
+    QChart *barchart;
+    
+    if (!holdon)
+        barchart = new QChart();
+    else
+        barchart = (charts.back() != nullptr) ? charts.back() : new QChart();
+
     barchart->addSeries(series);
     barchart->setAnimationOptions(QChart::SeriesAnimations);
     
+    QBarCategoryAxis *xaxis = nullptr;
+    QValueAxis *yaxis = nullptr;
+
     // Set x-axis values
     if (categories.size() > 0)
     {
@@ -110,18 +123,28 @@ void figure_impl::barplot(Mat x, vector<string> categories, Mat y, vector<string
         for (int i = 0; i < y.rows; i++)
             categoryvalues << tr(categories[i].c_str());
 
-        QBarCategoryAxis *axis = new QBarCategoryAxis();
-        axis->append(categoryvalues);
-        //chart->createDefaultAxes();
-
-        QValueAxis *yaxis = new QValueAxis();
-        //yaxis->setTickCount(11);
-        yaxis->applyNiceNumbers();
-        yaxis->setTickCount(yaxis->tickCount() + 3);
-        yaxis->applyNiceNumbers(); 
+        if (!holdon)
+            xaxis = new QBarCategoryAxis();
+        else
+            xaxis = qobject_cast<QBarCategoryAxis *>(barchart->axes(Qt::Horizontal, serieslist.back())[0]);
         
-        barchart->setAxisX(axis, series);
-        barchart->setAxisY(yaxis, series);
+        xaxis->append(categoryvalues);
+        
+        if (!holdon)
+            yaxis = new QValueAxis();
+        else
+            yaxis = qobject_cast<QValueAxis *>(barchart->axes(Qt::Vertical, serieslist.back())[0]);
+
+        yaxis->applyNiceNumbers();
+        
+        if (!holdon)
+        {
+            barchart->addAxis(xaxis, Qt::AlignBottom);
+            barchart->addAxis(yaxis, Qt::AlignLeft);
+        }
+
+        series->attachAxis(xaxis);
+        series->attachAxis(yaxis);
     }
     else
     {
@@ -136,14 +159,28 @@ void figure_impl::barplot(Mat x, vector<string> categories, Mat y, vector<string
             categoryvalues << tr(stream.str().c_str());
         }
         
-        QBarCategoryAxis *xaxis = new QBarCategoryAxis();
+        if (!holdon)
+            xaxis = new QBarCategoryAxis();
+        else
+            xaxis = qobject_cast<QBarCategoryAxis *>(barchart->axes(Qt::Horizontal, serieslist.back())[0]);
+        
         xaxis->append(categoryvalues);
         
-        QValueAxis *yaxis = new QValueAxis();
+        if (!holdon)
+            yaxis = new QValueAxis();
+        else
+            yaxis = qobject_cast<QValueAxis *>(barchart->axes(Qt::Vertical, serieslist.back())[0]);
+        
         yaxis->applyNiceNumbers();
         
-        barchart->setAxisX(xaxis, series);
-        barchart->setAxisY(yaxis, series);
+        if (!holdon)
+        {
+            barchart->addAxis(xaxis, Qt::AlignBottom);
+            barchart->addAxis(yaxis, Qt::AlignLeft);
+        }
+
+        series->attachAxis(xaxis);
+        series->attachAxis(yaxis);
     }
 
     // Store series for future usage
@@ -159,16 +196,22 @@ void figure_impl::barplot(Mat x, vector<string> categories, Mat y, vector<string
     }
     
     // Make grid lines invisible
-    barchart->axisX(serieslist.back())->setGridLineVisible(false);
-    barchart->axisY(serieslist.back())->setGridLineVisible(false);
+    //barchart->axisX(serieslist.back())->setGridLineVisible(false);
+    //barchart->axisY(serieslist.back())->setGridLineVisible(false);
+    xaxis->setGridLineVisible(false);
+    yaxis->setGridLineVisible(false);
 
     // Set y-axis range and tick count
-    barchart->axisY(serieslist.back())->setRange(range.first, range.second);
+    yaxis->setRange(range.first, range.second);
     QFont font;
     font.setPixelSize(16);
     font.setBold(true);
     barchart->setTitleFont(font);
-    
+    barchart->setContentsMargins(0, 0, 0, 0);
+
+    if (holdon)
+        return;
+
     views[nsubplot] = new QChartView(barchart);
     views[nsubplot]->setRenderHint(QPainter::Antialiasing);
     if (!subplotenabled)
@@ -189,10 +232,182 @@ void figure_impl::barplot(Mat x, vector<string> categories, Mat y, vector<string
     barchart->update();
     QRectF r = barchart->geometry();
     qreal h = r.height(), w = r.width();
-    yratio[nsubplot] = r.height() / ((QValueAxis*)barchart->axisY(serieslist.back()))->tickCount();
+    yratio[nsubplot] = r.height() / yaxis->tickCount();
     
-    if (categories.size() == 0)
-        xratio[nsubplot] = r.width() / ((QValueAxis*)barchart->axisX(serieslist.back()))->tickCount();
+    /*if (categories.size() == 0)
+        xratio[nsubplot] = r.width() / xaxis->tickCount();*/
+}
+
+void figure_impl::stackedbarplot(cv::Mat x, std::vector<std::string> categories, cv::Mat y, std::vector<std::string> groups)
+{
+    QBarSet **sets;
+
+    sets = new QBarSet*[y.cols];
+
+    // To create sets for plotting
+    if (groups.empty())
+    {
+        for (int i = 0; i < y.cols; i++)
+            sets[i] = new QBarSet(QString::fromStdString(to_string(i)));
+    }
+    else
+    {
+        CV_ASSERT2(groups.size() == y.cols, "The number of caterory names must be equal to the columns in y.");
+
+        for (int i = 0; i < y.cols; i++)
+            sets[i] = new QBarSet(QString::fromStdString(groups[i]));
+    }
+
+    // To populate sets with data.
+    Mat ydata = y.clone();
+    ydata.convertTo(ydata, CV_64FC1);
+    double *yptr = ydata.ptr<double>();
+
+    for (int i = 0; i < y.cols; i++)
+        for (int j = 0; j < y.rows; j++)
+            *sets[i] << yptr[j * y.cols + i];
+    // Get range to be set on y-axis
+    auto range = getRange(y);
+
+    // Add all the series to the chart
+    QStackedBarSeries *series = new QStackedBarSeries();
+
+    for (int i = 0; i < y.cols; i++)
+        series->append(sets[i]);
+
+    QChart *barchart;
+
+    if (!holdon)
+        barchart = new QChart();
+    else
+        barchart = (charts.back() != nullptr) ? charts.back() : new QChart();
+
+    barchart->addSeries(series);
+    barchart->setAnimationOptions(QChart::SeriesAnimations);
+
+    QBarCategoryAxis *xaxis = nullptr;
+    QValueAxis *yaxis = nullptr;
+
+    // Set x-axis values
+    if (categories.size() > 0)
+    {
+        QStringList categoryvalues;
+
+        for (int i = 0; i < y.rows; i++)
+            categoryvalues << tr(categories[i].c_str());
+
+        if (!holdon)
+            xaxis = new QBarCategoryAxis();
+        else
+            xaxis = qobject_cast<QBarCategoryAxis *>(barchart->axes(Qt::Horizontal, serieslist.back())[0]);
+
+        xaxis->append(categoryvalues);
+
+        if (!holdon)
+            yaxis = new QValueAxis();
+        else
+            yaxis = qobject_cast<QValueAxis *>(barchart->axes(Qt::Vertical, serieslist.back())[0]);
+
+        yaxis->applyNiceNumbers();
+
+        if (!holdon)
+        {
+            barchart->addAxis(xaxis, Qt::AlignBottom);
+            barchart->addAxis(yaxis, Qt::AlignLeft);
+        }
+
+        series->attachAxis(xaxis);
+        series->attachAxis(yaxis);
+    }
+    else
+    {
+        QStringList categoryvalues;
+        double *xptr = x.ptr<double>();
+        double minv, maxv;
+        minMaxLoc(x, &minv, &maxv);
+        for (int i = 0; i < y.rows; i++)
+        {
+            ostringstream stream;
+            stream << fixed << std::setprecision(precision) << xptr[i];
+            categoryvalues << tr(stream.str().c_str());
+        }
+
+        if (!holdon)
+            xaxis = new QBarCategoryAxis();
+        else
+            xaxis = qobject_cast<QBarCategoryAxis *>(barchart->axes(Qt::Horizontal, serieslist.back())[0]);
+
+        xaxis->append(categoryvalues);
+
+        if (!holdon)
+            yaxis = new QValueAxis();
+        else
+            yaxis = qobject_cast<QValueAxis *>(barchart->axes(Qt::Vertical, serieslist.back())[0]);
+
+        yaxis->applyNiceNumbers();
+
+        if (!holdon)
+        {
+            barchart->addAxis(xaxis, Qt::AlignBottom);
+            barchart->addAxis(yaxis, Qt::AlignLeft);
+        }
+
+        series->attachAxis(xaxis);
+        series->attachAxis(yaxis);
+    }
+
+    // Store series for future usage
+    serieslist.push_back(series);
+
+    // Set legend settings
+    if (groups.empty())
+        barchart->legend()->setVisible(false);
+    else
+    {
+        barchart->legend()->setVisible(true);
+        barchart->legend()->setAlignment(Qt::AlignRight);
+    }
+
+    // Make grid lines invisible
+    //barchart->axisX(serieslist.back())->setGridLineVisible(false);
+    //barchart->axisY(serieslist.back())->setGridLineVisible(false);
+    xaxis->setGridLineVisible(false);
+    yaxis->setGridLineVisible(false);
+
+    // Set y-axis range and tick count
+    yaxis->setRange(range.first, range.second);
+    QFont font;
+    font.setPixelSize(16);
+    font.setBold(true);
+    barchart->setTitleFont(font);
+
+    if (holdon)
+        return;
+
+    views[nsubplot] = new QChartView(barchart);
+    views[nsubplot]->setRenderHint(QPainter::Antialiasing);
+    if (!subplotenabled)
+        baseLayout->addWidget(views[nsubplot]);
+    else
+    {
+        CV_ASSERT2(((nsubplot >= 0) && (nsubplot < nsubplots)), "The plot number must be any number from 1 to the number of plots the grid can support.");
+        baseLayout->addWidget(views[nsubplot], nsubplot / ncols, nsubplot % ncols);
+        baseLayout->setRowStretch(nsubplot / ncols, 1);
+        baseLayout->setColumnStretch(nsubplot % ncols, 1);
+    }
+
+    viewtypes[nsubplot] = ViewTypes::ChartView;
+    charts[nsubplot] = barchart;
+    images[nsubplot] = nullptr;
+    cvimages[nsubplot] = Mat();
+
+    barchart->update();
+    QRectF r = barchart->geometry();
+    qreal h = r.height(), w = r.width();
+    yratio[nsubplot] = r.height() / yaxis->tickCount();
+
+    /*if (categories.size() == 0)
+    xratio[nsubplot] = r.width() / xaxis->tickCount();*/
 }
 
 void figure_impl::imshowplot(QImage &img)
@@ -225,10 +440,12 @@ void figure_impl::imshowplot(QImage &img)
 
 void figure_impl::makewindow()
 {
+    qInstallMessageHandler(logger);
     setWindowTitle(QString("Figure ") + tr(to_string(figno).c_str()));
     resize(900, 600);
     // Create layout for figures
     widget = new QWidget();
+    widget->setContentsMargins(0, 0, 0, 0);
     baseLayout = new QGridLayout();
     baseLayout->setSpacing(0);
     baseLayout->setContentsMargins(0, 0, 0, 0);
@@ -253,10 +470,10 @@ void figure_impl::makewindow()
     this->layout()->setContentsMargins(0, 0, 0, 0);
     this->layout()->setSpacing(0);
     setCentralWidget(widget);
-    show();
+    //QMainWindow::show();
 }
 
-pair<QVariant, QVariant> figure_impl::getRange(Mat yvals)
+pair<qreal, qreal> figure_impl::getRange(Mat yvals)
 {
     double minv, maxv, powv;
     minMaxLoc(yvals, &minv, &maxv);
@@ -297,32 +514,29 @@ bool figure_impl::saveFile(const QString &fileName)
 void figure_impl::adjustticks(QChart* chart, int idx)
 {
     QRectF r = chart->geometry();
-    if (chart->axisX()->type() == QAbstractAxis::AxisType::AxisTypeValue)
+
+    if (chart->axes(Qt::Horizontal, serieslist.back())[0]->type() == QAbstractAxis::AxisType::AxisTypeValue)
     {
-        QValueAxis *temp = ((QValueAxis *)chart->axisX());
+        QValueAxis *temp = ((QValueAxis *)chart->axes(Qt::Horizontal, serieslist.back())[0]);
         int k = int(r.width() / xratio[idx]);
         double qr = (temp->max() - temp->min()) / (k - 1);
 
         if (std::floor(qr) == std::ceil(qr))
         {
             temp->setTickCount(int(r.width() / xratio[idx]));
-            cout << "r.width = " << r.width() << endl;
-            cout << "X tick = " << k << endl;
         }
 
         temp->applyNiceNumbers();
     }
 
-    if (chart->axisY()->type() == QAbstractAxis::AxisType::AxisTypeValue)
+    if (chart->axes(Qt::Vertical, serieslist.back())[0]->type() == QAbstractAxis::AxisType::AxisTypeValue)
     {
-        QValueAxis *temp = ((QValueAxis *)chart->axisY());
+        QValueAxis *temp = ((QValueAxis *)chart->axes(Qt::Vertical, serieslist.back())[0]);
         int k = int(r.height() / yratio[idx]);
         double qr = (temp->max() - temp->min()) / (k - 1);
 
         if (std::floor(qr) == std::ceil(qr))
         {
-            cout << "r.height = " << r.height() << endl;
-            cout << "Y tick = " << k << endl;
             temp->setTickCount(int(r.height() / yratio[idx]));
         }
 
@@ -355,13 +569,13 @@ void figure_impl::resizeEvent(QResizeEvent* event)
         a->update();
     }
 
-    for (int i = 0; i < nsubplots; i++)
+    /*for (int i = 0; i < nsubplots; i++)
     {
         if (charts[i] == nullptr)
             continue;
 
         adjustticks(charts[i], i);
-    }
+    }*/
 }
 
 figure_impl::figure_impl() : figure_impl(figure_impl::figure_number + 1)
@@ -386,7 +600,7 @@ figure_impl::figure_impl(int n)
     for (auto &a : views)
         a = nullptr;
     viewtypes.resize(1);
-    serieslist.resize(1);
+    //serieslist.resize(1);
     for (auto &a : serieslist)
         a = nullptr;
     charts.resize(1);
@@ -437,17 +651,23 @@ void figure_impl::setprecision(int p)
 
 }
 
-void figure_impl::bar(vector<string> &x, InputArray y, vector<string> groups)
+void figure_impl::bar(vector<string> &x, InputArray y, vector<string> groups, string style)
 {
     Mat ymat = getMat(y);
 
     CV_ASSERT2(x.size() == ymat.rows, "The number of x values and y values must be same.");
+    CV_ASSERT2(style == "grouped" || style == "stacked", "The bar plot style should be \"normal\" or \"stacked\".");
 
-    barplot(Mat(), x, ymat, groups);
+    if (style == "grouped")
+        barplot(Mat(), x, ymat, groups);
+    else
+        stackedbarplot(Mat(), x, ymat, groups);
 }
 
-void figure_impl::bar(InputArray x, InputArray y, vector<string> groups)
+void figure_impl::bar(InputArray x, InputArray y, vector<string> groups, string style)
 {
+    CV_ASSERT2(style == "grouped" || style == "stacked", "The bar plot style should be \"normal\" or \"stacked\".");
+
     if ((!x.empty()) && (!y.empty()))
     {
         Mat ymat = getMat(y);
@@ -455,8 +675,11 @@ void figure_impl::bar(InputArray x, InputArray y, vector<string> groups)
 
         CV_ASSERT2(xmat.cols == 1, "x value should be only one for each sample.");
         CV_ASSERT2(xmat.rows == ymat.rows, "The number of x values and y values must be same.");
-
-        barplot(xmat, vector<string>(), ymat, groups);
+        
+        if (style == "grouped")
+            barplot(xmat, vector<string>(), ymat, groups);
+        else
+            stackedbarplot(xmat, vector<string>(), ymat, groups);
     }
     else if ((!x.empty()) && (y.empty()))
     {
@@ -467,7 +690,10 @@ void figure_impl::bar(InputArray x, InputArray y, vector<string> groups)
         for (int i = 0; i < ymat.rows; i++)
             xptr[i] = double(i + 1);
         
-        barplot(xmat, vector<string>(), ymat, groups);
+        if (style == "grouped")
+            barplot(xmat, vector<string>(), ymat, groups);
+        else
+            stackedbarplot(xmat, vector<string>(), ymat, groups);
     }
     else
     {
@@ -541,7 +767,7 @@ void figure_impl::imshow(Mat &img)
     QImage::Format format;
     double minv, maxv;
 
-    CV_ASSERT2(img.depth() != CV_USRTYPE1, "User-defined depths not supported.");
+    //CV_ASSERT2(img.depth() != CV_USRTYPE1, "User-defined depths not supported.");
     CV_ASSERT2(img.channels() == 1 || img.channels() == 3, "The image should be either a single-channel grayscale or a 3-channel color image.");
 
     if (img.channels() == 1)
@@ -586,7 +812,7 @@ void figure_impl::imshow(Mat &img)
         cvimages[nsubplot] = img;
     }
     
-    QImage qimg(imgmat.data, imgmat.cols, imgmat.rows, imgmat.step, QImage::Format_RGB888);
+    QImage qimg(imgmat.data, imgmat.cols, imgmat.rows, int(imgmat.step), QImage::Format_RGB888);
     imshowplot(qimg);
 }
 
@@ -598,41 +824,79 @@ void figure_impl::title(string txt)
     charts.back()->setTitle(tr(txt.c_str()));
 }
 
-void figure_impl::xlabel(string lab)
+void figure_impl::xlabel(string lab, int fontSize, string fontWeight)
 {
     if (this->charts.size() == 0 || this->charts.back() == nullptr)
         return;
 
     QFont font;
-    font.setPixelSize(13);
-    font.setBold(true);
 
-    charts.back()->axisX(serieslist.back())->setTitleFont(font);
-    charts.back()->axisX(serieslist.back())->setTitleText(tr(lab.c_str()));
+    if (fontSize > 0)
+        font.setPixelSize(fontSize);
+    else
+        font.setPixelSize(13);
+
+    if (fontWeight == "bold")
+        font.setBold(true);
+    else
+        font.setBold(false);
+
+    charts.back()->axes(Qt::Horizontal, serieslist.back())[0]->setTitleFont(font);
+    charts.back()->axes(Qt::Horizontal, serieslist.back())[0]->setTitleText(tr(lab.c_str()));
 }
 
-void figure_impl::ylabel(string lab)
+void figure_impl::ylabel(string lab, int fontSize, string fontWeight)
 {
     if (this->charts.size() == 0 || this->charts.back() == nullptr)
         return;
 
     QFont font;
-    font.setPixelSize(13);
-    font.setBold(true);
 
-    charts.back()->axisY(serieslist.back())->setTitleFont(font);
-    charts.back()->axisY(serieslist.back())->setTitleText(tr(lab.c_str()));
+    if (fontSize > 0)
+        font.setPixelSize(fontSize);
+    else
+        font.setPixelSize(13);
+
+    if (fontWeight == "bold")
+        font.setBold(true);
+    else
+        font.setBold(false);
+
+    charts.back()->axes(Qt::Vertical, serieslist.back())[0]->setTitleFont(font);
+    charts.back()->axes(Qt::Vertical, serieslist.back())[0]->setTitleText(tr(lab.c_str()));
 }
 
 void figure_impl::showgrid(bool on)
 {
-    charts.back()->axisX(serieslist.back())->setGridLineVisible(on);
-    charts.back()->axisY(serieslist.back())->setGridLineVisible(on);
+    charts.back()->axes(Qt::Horizontal, serieslist.back())[0]->setGridLineVisible(on);
+    charts.back()->axes(Qt::Vertical, serieslist.back())[0]->setGridLineVisible(on);
+}
+
+void figure_impl::hold(bool on)
+{
+    holdon = true;
+}
+
+//QWidget *figure_impl::getChartWidget()
+//{
+//    return takeCentralWidget();
+//}
+
+// TODO: Get chart based on subplot.
+QChart* figure_impl::getChart()
+{
+    return charts.back();
+}
+
+void figure_impl::show()
+{
+    QMainWindow::show();
 }
 
 void figure_impl::wait()
 {
-    GlobalValues::app->exec();
+    QApplication::instance()->exec();
+    //GlobalValues::app->exec();
 }
 
 void figure_impl::release()

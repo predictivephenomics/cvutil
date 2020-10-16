@@ -1,23 +1,25 @@
-/*  Copyright (C) 2018-2019 Noble Research Institute, LLC
+/*  Copyright (C) 2018-2020 Noble Research Institute, LLC
 
 File: cvutil_core.cpp
 
 Author: Anand Seethepalli (aseethepalli@noble.org)
-Principal Investigator: Larry York (lmyork@noble.org)
+Assistant Professor: Larry York (lmyork@noble.org)
 Root Phenomics Lab
 Noble Research Institute, LLC
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
-cvutil is free software: you can redistribute it and/or modify
-it under the terms of the NOBLE RESEARCH INSTITUTE, GENERAL PUBLIC LICENSE.
+cvutil is free software. You can redistribute it and/or modify
+it as permissible under the terms of the Noble General Public
+License as published by the Noble Research Institute, LLC. This
+license is available at the following link.
 
 cvutil is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-NOBLE RESEARCH INSTITUTE GENERAL PUBLIC LICENSE for more details.
+Noble General Public License for more details.
 
-You should have received a copy of the Noble Research Institute General Public License
+You should have received a copy of the Noble General Public License
 along with cvutil.  If not, see <https://github.com/noble-research-institute/cvutil/blob/master/LICENSE>.
 */
 
@@ -26,6 +28,9 @@ along with cvutil.  If not, see <https://github.com/noble-research-institute/cvu
 #include "cvutil_bwthin.h"
 #include "cvutil_linesim.h"
 #include "cvutil_bwskel.h"
+#include "cvutil_types.h"
+
+#include "MainWindow/MainWindow.h"
 
 using namespace std;
 using namespace cv;
@@ -210,59 +215,151 @@ vector<vector<int>> cvutil::getConnectedComponents(Mat img, int size, int conn)
     return result;
 }
 
+vector<vector<int>> cvutil::getConnectedComponents(Mat img, Mat& lab, int size, int conn)
+{
+    CV_ASSERT2(img.channels() == 1, "img must be a single channel image.");
+    CV_ASSERT2(conn == 4 || conn == 8, "connectivity value must be either 4 or 8.");
+    int ncomp, npixels = 0, nrequiredcomp = 0, i;
+    Mat m = img.clone();
+    lab = Mat(img.size(), CV_32S);
+    m.convertTo(m, CV_8UC1);
+
+    ncomp = connectedComponents(m, lab, conn);
+    vector<vector<int>> result;
+
+    int nelements = img.size().height * img.size().width;
+    int *data = lab.ptr<int>();
+    int *idx;
+    int *rvals;
+    int **vals;
+
+    vector<int> nsizedata(ncomp);
+    int *nsize = nsizedata.data();
+
+    for (i = 0; i < nelements; i++)
+    {
+        if (data[i] != 0)
+            nsize[data[i] - 1]++;
+    }
+
+    if (size <= 0)
+    {
+        ncomp--;
+        result.resize(ncomp);
+        idx = new int[ncomp]();
+        vals = new int*[ncomp];
+
+        for (i = 0; i < ncomp; i++)
+        {
+            result[i].resize(nsize[i]);
+            vals[i] = result[i].data();
+        }
+        for (i = 0; i < nelements; i++)
+        {
+            if (data[i] != 0)
+            {
+                vals[data[i] - 1][idx[data[i] - 1]] = i;
+                idx[data[i] - 1]++;
+            }
+        }
+    }
+    else
+    {
+        for (i = 0, nrequiredcomp = 0; i < ncomp; i++)
+        {
+            if (nsize[i] > size)
+                nrequiredcomp++;
+        }
+
+        result.resize(nrequiredcomp);
+        idx = new int[nrequiredcomp]();
+        rvals = new int[ncomp]();
+        vals = new int*[nrequiredcomp];
+
+        for (i = 0, nrequiredcomp = 0; i < ncomp; i++)
+        {
+            if (nsize[i] > size)
+            {
+                result[nrequiredcomp].resize(nsize[i]);
+                vals[nrequiredcomp] = result[nrequiredcomp].data();
+                rvals[i] = nrequiredcomp;
+                nrequiredcomp++;
+            }
+            else
+                rvals[i] = -1;
+        }
+
+        for (i = 0; i < nelements; i++)
+        {
+            if (data[i] != 0 && rvals[data[i] - 1] >= 0)
+            {
+                vals[rvals[data[i] - 1]][idx[rvals[data[i] - 1]]] = i;
+                idx[rvals[data[i] - 1]]++;
+            }
+        }
+
+        delete[] rvals;
+    }
+
+    delete[] vals;
+    delete[] idx;
+
+    return result;
+}
+
 void onMouse(int event, int _x, int _y, int flags, void *data)
 {
-    if (event != CV_EVENT_LBUTTONUP && //event != CV_EVENT_MOUSEMOVE && 
-        event != CV_EVENT_LBUTTONDOWN && event != CV_EVENT_MOUSEWHEEL)
+    if (event != EVENT_LBUTTONUP && //event != EVENT_MOUSEMOVE && 
+        event != EVENT_LBUTTONDOWN && event != EVENT_MOUSEWHEEL)
         return;
 
     WinData *dt = static_cast<WinData *>(data);
     Mat m = (*dt).m;
 
-    if (event == CV_EVENT_LBUTTONUP)
+    if (event == EVENT_LBUTTONUP)
     {
         int x = _x + dt->xzoomshift, y = _y + dt->yzoomshift;
         if (m.depth() == CV_8U)
         {
             if (m.channels() == 3)
-                cout << "row = " << y << "    col = " << x << "    value = (" << (int)m.at<Vec3b>(y, x)[0] << ", " << (int)m.at<Vec3b>(y, x)[1] << ", " << (int)m.at<Vec3b>(y, x)[2] << ")\n";
+                qInfo() << "row = " << y << "    col = " << x << "    value = (" << (int)m.at<Vec3b>(y, x)[0] << ", " << (int)m.at<Vec3b>(y, x)[1] << ", " << (int)m.at<Vec3b>(y, x)[2] << ")\n";
             else
-                cout << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << (int)m.at<uchar>(y, x) << "\n";
+                qInfo() << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << (int)m.at<uchar>(y, x) << "\n";
         }
         else if (m.depth() == CV_16U)
         {
             if (m.channels() == 3)
-                cout << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3w>(y, x)[0] << ", " << m.at<Vec3w>(y, x)[1] << ", " << m.at<Vec3w>(y, x)[2] << ")\n";
+                qInfo() << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3w>(y, x)[0] << ", " << m.at<Vec3w>(y, x)[1] << ", " << m.at<Vec3w>(y, x)[2] << ")\n";
             else
-                cout << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<ushort>(y, x) << "\n";
+                qInfo() << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<ushort>(y, x) << "\n";
         }
         else if (m.depth() == CV_16S)
         {
             if (m.channels() == 3)
-                cout << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3s>(y, x)[0] << ", " << m.at<Vec3s>(y, x)[1] << ", " << m.at<Vec3s>(y, x)[2] << ")\n";
+                qInfo() << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3s>(y, x)[0] << ", " << m.at<Vec3s>(y, x)[1] << ", " << m.at<Vec3s>(y, x)[2] << ")\n";
             else
-                cout << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<short>(y, x) << "\n";
+                qInfo() << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<short>(y, x) << "\n";
         }
         else if (m.depth() == CV_32S)
         {
             if (m.channels() == 3)
-                cout << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3i>(y, x)[0] << ", " << m.at<Vec3i>(y, x)[1] << ", " << m.at<Vec3i>(y, x)[2] << ")\n";
+                qInfo() << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3i>(y, x)[0] << ", " << m.at<Vec3i>(y, x)[1] << ", " << m.at<Vec3i>(y, x)[2] << ")\n";
             else
-                cout << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<int>(y, x) << "\n";
+                qInfo() << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<int>(y, x) << "\n";
         }
         else if (m.depth() == CV_32F)
         {
             if (m.channels() == 3)
-                cout << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3f>(y, x)[0] << ", " << m.at<Vec3f>(y, x)[1] << ", " << m.at<Vec3f>(y, x)[2] << ")\n";
+                qInfo() << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3f>(y, x)[0] << ", " << m.at<Vec3f>(y, x)[1] << ", " << m.at<Vec3f>(y, x)[2] << ")\n";
             else
-                cout << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<float>(y, x) << "\n";
+                qInfo() << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<float>(y, x) << "\n";
         }
         else if (m.depth() == CV_64F)
         {
             if (m.channels() == 3)
-                cout << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3d>(y, x)[0] << ", " << m.at<Vec3d>(y, x)[1] << ", " << m.at<Vec3d>(y, x)[2] << ")\n";
+                qInfo() << "row = " << y << "    col = " << x << "    value = (" << m.at<Vec3d>(y, x)[0] << ", " << m.at<Vec3d>(y, x)[1] << ", " << m.at<Vec3d>(y, x)[2] << ")\n";
             else
-                cout << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<double>(y, x) << "\n";
+                qInfo() << "row = " << y << "    col = " << x << "    idx = " << y * m.cols + x << "    value = " << m.at<double>(y, x) << "\n";
         }
 
         if (dt->panmode == true)
@@ -273,12 +370,12 @@ void onMouse(int event, int _x, int _y, int flags, void *data)
             dt->panmode = false;
         }
     }
-    else if (event == CV_EVENT_LBUTTONDOWN)
+    else if (event == EVENT_LBUTTONDOWN)
     {
         dt->lbuttondownx = _x;
         dt->lbuttondowny = _y;
     }
-    else if (event == CV_EVENT_MOUSEWHEEL && dt->panmode == false)
+    else if (event == EVENT_MOUSEWHEEL && dt->panmode == false)
     {
         int wheelmove = getMouseWheelDelta(flags) / 120;
         int percentinc = 2;
@@ -676,6 +773,9 @@ void cvutil::init(int argc, char *argv[], bool useOpt)
     // Seed the random number generator
     srand(time(0));
 
+    // Set text encoding to UTF-8 for the program
+    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+    QTextCodec::setCodecForLocale(codec);
 }
 
 void cvutil::drawText(Mat &GeomLayer, const string & text, Point org, Scalar color, int rightmargin, int thickness)
@@ -730,7 +830,7 @@ void cvutil::drawText(Mat &GeomLayer, const string & text, Point org, Scalar col
         {
             Size s;
             sz.width = 0;
-            sz.height *= clines.size();
+            sz.height *= static_cast<int>(clines.size());
 
             for (auto str : clines)
             {
@@ -750,7 +850,7 @@ void cvutil::drawText(Mat &GeomLayer, const string & text, Point org, Scalar col
 
         // Finally update the size of the geometry drawn.
         // Width is already updated.
-        sz.height *= clines.size();
+        sz.height *= static_cast<int>(clines.size());
     }
     else
         putText(GeomLayer, text, org, fontname, fontsize, s, thickness, CV_AA);
@@ -764,6 +864,80 @@ Mat cvutil::getImageFromComponents(Size sz, vector<vector<int>> components)
     for (const auto &component : components)
         for (const auto &index : component)
             data[index] = 255;
+
+    return result;
+}
+
+Ptr<cvutilWindow> cvutil::getImageProcessorWindow(QIcon appico)
+{
+    static MainWindow *result = nullptr;
+
+    if (result != nullptr)
+        return result;
+    else
+    {
+        result = new MainWindow();
+        result->setWindowFlags(result->windowFlags());
+        result->setWindowIcon(appico);
+        return result;
+    }
+}
+
+Mat cvutil::imread(QString& filename, int flags)
+{
+    QFile file(filename);
+    if (!file.open(QFile::ReadOnly))
+        return Mat();
+    QByteArray arr = file.readAll();
+    file.close();
+
+    return imdecode(vector<uchar>(arr.begin(), arr.end()), flags);
+}
+
+bool cvutil::imwrite(QString filename, Mat img, const std::vector<int> & params)
+{
+    if (filename.length() == 0)
+    {
+        qCritical() << "Cannot save the image.";
+        return false;
+    }
+
+    // TODO: Add support for GDAL image formats.
+    vector<QString> extlist = {".bmp", ".dib", ".jpeg", ".jpg", ".jpe", ".jp2", 
+                              ".png", ".webp", ".pbm", ".pgm", ".ppm", ".pxm", 
+                              ".pnm", ".pfm", ".sr", ".ras", ".tiff", ".tif",
+                              ".exr", ".hdr", ".pic"};
+    QString ext;
+
+    for (auto &e : extlist)
+    {
+        if (filename.endsWith(e, Qt::CaseInsensitive))
+        {
+            ext = e;
+            break;
+        }
+    }
+
+    if (ext.length() == 0)
+    {
+        qCritical() << "Unknown file extension. Image write failure.";
+        return false;
+    }
+
+    std::vector<uchar> buffer;
+    bool result = imencode(ext.toStdString(), img, buffer, params);
+
+    QByteArray arr(reinterpret_cast<const char*>(buffer.data()), static_cast<int>(buffer.size()));
+
+    QFile file(filename);
+    if (!file.open(QFile::WriteOnly))
+    {
+        qCritical() << "Cannot write to the file. Image write failure.";
+        return false;
+    }
+    
+    file.write(arr);
+    file.close();
 
     return result;
 }

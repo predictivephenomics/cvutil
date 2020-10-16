@@ -1,23 +1,25 @@
-/*  Copyright (C) 2018-2019 Noble Research Institute, LLC
+/*  Copyright (C) 2018-2020 Noble Research Institute, LLC
 
 File: stdproto.h
 
 Author: Anand Seethepalli (aseethepalli@noble.org)
-Principal Investigator: Larry York (lmyork@noble.org)
+Assistant Professor: Larry York (lmyork@noble.org)
 Root Phenomics Lab
 Noble Research Institute, LLC
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
-cvutil is free software: you can redistribute it and/or modify
-it under the terms of the NOBLE RESEARCH INSTITUTE, GENERAL PUBLIC LICENSE.
+cvutil is free software. You can redistribute it and/or modify
+it as permissible under the terms of the Noble General Public
+License as published by the Noble Research Institute, LLC. This
+license is available at the following link.
 
 cvutil is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-NOBLE RESEARCH INSTITUTE GENERAL PUBLIC LICENSE for more details.
+Noble General Public License for more details.
 
-You should have received a copy of the Noble Research Institute General Public License
+You should have received a copy of the Noble General Public License
 along with cvutil.  If not, see <https://github.com/noble-research-institute/cvutil/blob/master/LICENSE>.
 */
 
@@ -28,7 +30,9 @@ along with cvutil.  If not, see <https://github.com/noble-research-institute/cvu
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/videoio.hpp>
 
 #include <cmath>
@@ -38,8 +42,10 @@ along with cvutil.  If not, see <https://github.com/noble-research-institute/cvu
 #include <unordered_map>
 #include <unordered_set>
 #include <tchar.h>
-#include <experimental/filesystem>
+//#include <experimental/filesystem>
+#include <iomanip>
 #include <iostream>
+#include <fstream>
 #include <thread>
 #include <sys/stat.h>
 
@@ -50,11 +56,13 @@ along with cvutil.  If not, see <https://github.com/noble-research-institute/cvu
 
 #include <cuda_runtime.h>
 
+// UI facilities
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QtWidgets>
+
 #ifdef WIN32
 #if (defined _WINDLL && defined CVUTIL_SOURCE)
 #define CVUTILAPI __declspec(dllexport) 
-#include <QtWidgets/QApplication>
-#include "cvutil_types.h"
 #else
 #define CVUTILAPI __declspec(dllimport)
 #endif
@@ -74,5 +82,7 @@ _crtBreakAlloc = (x);
 #else
 #include <stdlib.h>
 #endif
+
+#define CVUTIL_SQRT2 1.414213562373095048801688724209
 
 #endif

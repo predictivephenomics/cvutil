@@ -1,0 +1,28 @@
+<!DOCTYPE RCC>
+<!-- Manually run Qt resource compiler
+    $(QTDIR)\bin\rcc.exe -name resources resources.qrc -o qrc_resources.cpp
+    
+    Then manually add qrc_resources.cpp to VC ptoject. 
+    
+    Add this file to the project for maintenance. -->
+<RCC version="1.0">
+  <qresource>
+      <file>icons/cursor.png</file>
+      <file>icons/fittowindow.png</file>
+      <file>icons/panhand.png</file>
+      <file>icons/regionofinterest.png</file>
+      <file>icons/zoomin.png</file>
+      <file>icons/zoomout.png</file>
+      <file>icons/pixelmeasuresROI.png</file>
+      <file>icons/pixelmeasureswholeimage.png</file>
+      <file>icons/startfeatureanalysis.png</file>
+      <file>icons/left-arrow.png</file>
+      <file>icons/right-arrow.png</file>
+      <file>icons/eyedropper.png</file>
+      <file>icons/mag-glass-zoomin.png</file>
+      <file>icons/mag-glass-zoomin-box.png</file>
+      <file>icons/mag-glass-zoomout.png</file>
+      <file>icons/mag-glass-zoomout-box.png</file>
+      <file>icons/invert_image.png</file>
+  </qresource>
+</RCC>

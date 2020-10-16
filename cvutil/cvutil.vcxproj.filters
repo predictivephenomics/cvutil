@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\MainWindow">
+      <UniqueIdentifier>{629955f0-d7f5-4203-9ede-7570acd5edea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MainWindow">
+      <UniqueIdentifier>{402c4728-5722-44eb-8ddc-acf71c5525a4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -44,6 +50,42 @@
     </ClCompile>
     <ClCompile Include="cvutil_videowriter.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\BatchProcessor.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\GraphicsScene.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\MainWindow.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\moc_BatchProcessor.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\moc_GraphicsScene.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\moc_MainWindow.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\FeatureExtractorThread.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\moc_FeatureExtractorThread.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="qrc_resources.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\logger.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\InteractiveExtractorThread.cpp">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindow\moc_InteractiveExtractorThread.cpp">
+      <Filter>Source Files\MainWindow</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -98,13 +140,35 @@
     <ClInclude Include="cvutil_videowriter.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="MainWindow\BatchProcessor.h">
+      <Filter>Header Files\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="MainWindow\MainWindow.h">
+      <Filter>Header Files\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="MainWindow\GraphicsScene.h">
+      <Filter>Header Files\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="MainWindow\FeatureExtractorThread.h">
+      <Filter>Header Files\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="MainWindow\logger.h">
+      <Filter>Header Files\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="MainWindow\InteractiveExtractorThread.h">
+      <Filter>Source Files\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
-    <None Include="COPYING" />
-    <None Include="README.md" />
+    <None Include="resources.qrc" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="changelog.txt" />
+    <ResourceCompile Include="cvutil.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

@@ -1,3 +1,76 @@
+version 2.0.2
+-------------
+New features:
+* Updated cvutil library to use OpenCV 4.1.
+* A new function getImageProcessorWindow() is added that creates a main 
+  window to load and process images. The window returned by this function 
+  has the following features:
+  1.  Supports drag & drop of images to load.
+  2.  Supports image panning and zooming.
+  3.  Allows user to inspect pixel values in five different color spaces
+      such as RGB, HSV, HLS, Lab and Luv.
+  4.  Supports drawing Region-of-Interest (ROI) rectangles on the image
+      to highlight important portions.
+  5.  User can query pixel statistics of a loaded image in five different
+      color spaces (mentioned above), either on an entire image, or the
+      locations specified by ROIs. The statistics include mean and SD of
+      the color channels.
+  6.  The ROI subsystem supports selecting, moving, resizing and deleting
+      multiple ROIs. Deleting the ROIs can be done using the delete key.
+      Ctrl+A selects all the ROIs. All the ROIs can be deleted from the 
+      menu using Edit->ROI->Clear all ROIs.
+  7.  The ROI subsystem also supports exporting and importing the ROIs as
+      annotations in a text file.
+  8.  The ROI Manager pane to the right of the main Window shows the ROIs
+      that are currently present on the image. Selecting an ROI shows its 
+      dimensions, which can be edited in the pane.
+  9.  The main window supports plugin system. When a plugin is loaded, its
+      settings are populated to the left of the main window. Plugins are
+      independent modules that implement a specific procedure/method/algorithm
+      that can be attached to and configured frim inside the main window.
+  10. Main window supports browsing images in the same folder using left 
+      and right arrow keys.
+  11. Supports "Run analysis" button in the toolbar, that invokes the current 
+      plugin loaded to perform analysis on the loaded image.
+  12. The main window has a log pane for logging info/warning/error messages
+      and a features pane to display any extracted features from the plugin.
+      Both the panes are located at the bottom of the main window.
+  13. The main window supports color inversion and 90 degree rotation of
+      a loaded image.
+  14. If the current plugin has multiple outputs, these outputs can be 
+      browsed from the toolbar of the main window or by pressing SPACE key.
+      SPACE key toggles the image displayed between input image and multiple
+      output images.
+* Re-implemented OpenCV's imread() and imwrite() to support loading
+  images where the file paths are in a different locale. These functions
+  require QString from Qt as argument to load/save the images using
+  QByteArray, while decoding/encoding the byte sequence is done using
+  OpenCV's imdecode()/imencode() functions.
+* Implemented another getConnectedComponents() to return label image.
+* Implemented stacked barplot functionality.
+
+Fixes:
+* cvutil_bwdist.cpp: Supressed compiler warning when using AVX 2.0 
+  vector instructions.
+* cvutil_bwskel.cpp: Supressed compiler warning when using AVX 2.0 
+  vector instructions.
+* cvutil_bwskel.cpp: Fixed code to use 32-byte aligned memory when
+  using vector variables.
+* cvutil_bwskel.cpp: Fixed code to skeletonize a binary image containing
+  multiple components.
+* cvutil_core.cpp: Set the codec for text input/output as UTF-8 to
+  support non-English characters.
+* cvutil_core.cpp: Fixed onMouse() event handler for window() function 
+  to send messages to logger.
+* cvutil_figure.cpp: Fixed barplot functionality from crashing.
+* cvutil_linesim.cpp: Fixed code to simplify the contours of a binary 
+  image containing multiple components.
+* cvutil_matlab_interface.cpp: Fixed code to typecast addresses to 
+  unsigned long long.
+* The cvutil library now uses Qt's QFile and QDir for platform 
+  independent access to filesystem to fix loading/saving of images 
+  where the file paths contain non-English characters.
+
 version 1.3
 -----------
 New features:

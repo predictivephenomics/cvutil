@@ -1,23 +1,25 @@
-/*  Copyright (C) 2018-2019 Noble Research Institute, LLC
+/*  Copyright (C) 2018-2020 Noble Research Institute, LLC
 
 File: cvutil_bwskel.cpp
 
 Author: Anand Seethepalli (aseethepalli@noble.org)
-Principal Investigator: Larry York (lmyork@noble.org)
+Assistant Professor: Larry York (lmyork@noble.org)
 Root Phenomics Lab
 Noble Research Institute, LLC
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
-cvutil is free software: you can redistribute it and/or modify
-it under the terms of the NOBLE RESEARCH INSTITUTE, GENERAL PUBLIC LICENSE.
+cvutil is free software. You can redistribute it and/or modify
+it as permissible under the terms of the Noble General Public
+License as published by the Noble Research Institute, LLC. This
+license is available at the following link.
 
 cvutil is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-NOBLE RESEARCH INSTITUTE GENERAL PUBLIC LICENSE for more details.
+Noble General Public License for more details.
 
-You should have received a copy of the Noble Research Institute General Public License
+You should have received a copy of the Noble General Public License
 along with cvutil.  If not, see <https://github.com/noble-research-institute/cvutil/blob/master/LICENSE>.
 */
 
@@ -25,6 +27,8 @@ along with cvutil.  If not, see <https://github.com/noble-research-institute/cvu
 
 #include "cvutil.h"
 #include "cvutil_bwskel.h"
+
+#pragma warning(disable : 4752)
 
 //#define DIST(x)     (round(distptr[(x)] * 1000.0) / 1000.0)
 
@@ -36,19 +40,61 @@ using namespace cv;
 // allocated continuous memory.
 class location_base
 {
+    const unsigned int vecsize = 256;
+    const unsigned int alignment = 32;
+
+    void init_vectors()
+    {
+        // We want these vaiables to be 32-byte aligned, as the alignment
+        // cannot be enforced if they are not pointers in the class.
+        // This problem may be resolved in the newer standard of C++ (c++17).
+        tn = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        tn2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        tp = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        tp2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        tele = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        tzero = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        tpt = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        PC2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        PC3 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        PC4 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+
+        PT = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
+        PN = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
+        PC = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
+    }
+
+    void delete_vectors()
+    {
+        _aligned_free(tn);
+        _aligned_free(tn2);
+        _aligned_free(tp);
+        _aligned_free(tp2);
+        _aligned_free(tele);
+        _aligned_free(tzero);
+        _aligned_free(tpt);
+        _aligned_free(PC2);
+        _aligned_free(PC3);
+        _aligned_free(PC4);
+
+        _aligned_free(PT);
+        _aligned_free(PN);
+        _aligned_free(PC);
+    }
 protected:
+    int N[8], N2[8];
+    __m256i *tn, *tn2, *tp, *tp2, *tele, *tzero, *tpt, *PC2, *PC3, *PC4;
+    __m256 *PT, *PN, *PC;
+
     // Single channel, CV_8U image matrix
     uchar* imgp = nullptr;
+    bool avx2;
 
     int prevpt, pt;
     int nelements;
     int rows, cols;
-    bool avx2;
 
-    int N[8], N2[8];
-    __m256i tn, tn2, tp, tp2, tp3, tele, tzero, tpt, PC2, PC3, PC4;
-    __m256 PT, PN, PN4, PC, PCC;
-
+public:
     location_base(Mat *_img, int _pt = 0) : imgp(_img->ptr<uchar>()), pt(_pt), prevpt(0),
         nelements(_img->rows * _img->cols), rows(_img->rows), cols(_img->cols)
     {
@@ -65,15 +111,18 @@ protected:
 
         if (avx2)
         {
-            tn = _mm256_loadu_si256((__m256i const *)N);
-            tn2 = _mm256_loadu_si256((__m256i const *)N2);
+            init_vectors();
 
-            tele = _mm256_set1_epi32(nelements);
-            tzero = _mm256_set1_epi32(0);
+            (*tn) = _mm256_loadu_si256((__m256i const *)N);
+            (*tn2) = _mm256_loadu_si256((__m256i const *)N2);
+
+            (*tele) = _mm256_set1_epi32(nelements);
+            (*tzero) = _mm256_set1_epi32(0);
         }
     }
+
     location_base(uchar *_img, int _rows, int _cols, int _pt = 0) : imgp(_img), pt(_pt), prevpt(0),
-        nelements(_rows * _cols), rows(_rows), cols(_cols) 
+        nelements(_rows * _cols), rows(_rows), cols(_cols)
     {
         int _N[8] = { 1, -cols + 1, -cols, -cols - 1, -1, cols - 1, cols, cols + 1 };
         int _N2[8] = { 2, -2 * cols + 2, -2 * cols, -2 * cols - 2, -2, 2 * cols - 2, 2 * cols, 2 * cols + 2 };
@@ -88,19 +137,25 @@ protected:
 
         if (avx2)
         {
-            tn = _mm256_loadu_si256((__m256i const *)N);
-            tn2 = _mm256_loadu_si256((__m256i const *)N2);
+            init_vectors();
 
-            tele = _mm256_set1_epi32(nelements);
-            tzero = _mm256_set1_epi32(0);
+            (*tn) = _mm256_loadu_si256((__m256i const *)N);
+            (*tn2) = _mm256_loadu_si256((__m256i const *)N2);
+
+            (*tele) = _mm256_set1_epi32(nelements);
+            (*tzero) = _mm256_set1_epi32(0);
         }
     }
-
-public:
-    static location_base* create(Mat *_img, int _pt = 0)
+    
+    ~location_base()
+    {
+        if (avx2)
+            delete_vectors();
+    }
+    /*static location_base* create(Mat *_img, int _pt = 0)
     {
         return new location_base(_img, _pt);
-    }
+    }*/
 
     // We never perform a deep copy. We just copy the pointers and the
     // current position pt.
@@ -205,6 +260,22 @@ public:
 
         return false;
     }
+
+    int xh8()
+    {
+        int t1, t2, t3, conn;
+
+        for (t1 = 0, conn = 0; t1 < 8; t1 += 2)
+        {
+            t2 = (t1 + 1);
+            t3 = (t1 + 2) % 8;
+
+            if (imgp[pt + N[t1]] == 0 && (imgp[pt + N[t2]] != 0 || imgp[pt + N[t3]] != 0))
+                conn++;
+        }
+
+        return conn;
+    }
 };
 
 class location : public location_base
@@ -214,16 +285,16 @@ class location : public location_base
     uchar *ridgep = nullptr;
     int *labp = nullptr;
 
+public:
     location(Mat *_img, Mat *_dist, Mat *_ridge, int _pt = 0) : location_base(_img, _pt), distp(_dist->ptr<float>()),
         ridgep(_ridge->ptr<uchar>()) {}
     location(uchar* _img, float *_dist, uchar *_ridge, int _rows, int _cols, int _pt = 0) : location_base(_img, _rows, _cols, _pt), distp(_dist),
         ridgep(_ridge) {}
-    
-public:
-    static location* create(Mat *_img, Mat *_dist, Mat *_ridge, int _pt = 0)
+
+    /*static location* create(Mat *_img, Mat *_dist, Mat *_ridge, int _pt = 0)
     {
         return new location(_img, _dist, _ridge, _pt);
-    }
+    }*/
 
     // We never perform a deep copy. We just copy the pointers and the
     // current position pt.
@@ -289,40 +360,39 @@ public:
             int t2 = t1 + 4;
             float P = distp[pt];
 
-            tpt = _mm256_set1_epi32(pt);
-            tp = _mm256_add_epi32(tpt, tn);
-            //tp2 = _mm256_add_epi32(tpt, tn2);
+            (*tpt) = _mm256_set1_epi32(pt);
+            (*tp) = _mm256_add_epi32((*tpt), (*tn));
 
-            PT = _mm256_set1_ps(distp[pt]);
-            PN = _mm256_set_ps(distp[tp.m256i_i32[7]], distp[tp.m256i_i32[6]], distp[tp.m256i_i32[5]], distp[tp.m256i_i32[4]],
-                distp[tp.m256i_i32[3]], distp[tp.m256i_i32[2]], distp[tp.m256i_i32[1]], distp[tp.m256i_i32[0]]);
-            PC = _mm256_cmp_ps(PT, PN, _CMP_GT_OQ);
+            (*PT) = _mm256_set1_ps(distp[pt]);
+            (*PN) = _mm256_set_ps(distp[(*tp).m256i_i32[7]], distp[(*tp).m256i_i32[6]], distp[(*tp).m256i_i32[5]], distp[(*tp).m256i_i32[4]],
+                distp[(*tp).m256i_i32[3]], distp[(*tp).m256i_i32[2]], distp[(*tp).m256i_i32[1]], distp[(*tp).m256i_i32[0]]);
+            (*PC) = _mm256_cmp_ps((*PT), (*PN), _CMP_GT_OQ);
 
-            PC2 = _mm256_castps_si256(PC);
-            PC3 = _mm256_permute2f128_si256(PC2, PC2, 0x81);
-            PC4 = _mm256_and_si256(PC2, PC3);
+            (*PC2) = _mm256_castps_si256((*PC));
+            (*PC3) = _mm256_permute2f128_si256((*PC2), (*PC2), 0x81);
+            (*PC4) = _mm256_and_si256((*PC2), (*PC3));
             
-            if (_mm256_movemask_epi8(PC4) > 0)
+            if (_mm256_movemask_epi8((*PC4)) > 0)
                 return true;
 
-            PC3 = _mm256_permute2f128_si256(PC2, PC2, 0x1);
-            PC = _mm256_cmp_ps(PT, PN, _CMP_EQ_OQ);
-            PC2 = _mm256_castps_si256(PC);
-            PC2 = _mm256_and_si256(PC2, PC3);
-            tp2 = _mm256_add_epi32(tpt, tn2);
-            PC3 = _mm256_cmpgt_epi32(tele, tp2);
-            PC2 = _mm256_and_si256(PC2, PC3);
-            PC3 = _mm256_or_si256(_mm256_cmpgt_epi32(tp2, tzero), _mm256_cmpeq_epi32(tp2, tzero));
-            PC2 = _mm256_and_si256(PC2, PC3);
+            (*PC3) = _mm256_permute2f128_si256((*PC2), (*PC2), 0x1);
+            (*PC) = _mm256_cmp_ps((*PT), (*PN), _CMP_EQ_OQ);
+            (*PC2) = _mm256_castps_si256((*PC));
+            (*PC2) = _mm256_and_si256((*PC2), (*PC3));
+            (*tp2) = _mm256_add_epi32((*tpt), (*tn2));
+            (*PC3) = _mm256_cmpgt_epi32((*tele), (*tp2));
+            (*PC2) = _mm256_and_si256((*PC2), (*PC3));
+            (*PC3) = _mm256_or_si256(_mm256_cmpgt_epi32((*tp2), (*tzero)), _mm256_cmpeq_epi32((*tp2), (*tzero)));
+            (*PC2) = _mm256_and_si256((*PC2), (*PC3));
 
             for (t1 = 0; t1 < 8; t1++)
-                if (PC2.m256i_u32[t1] && distp[tp2.m256i_i32[t1]] < P)
+                if ((*PC2).m256i_u32[t1] && distp[(*tp2).m256i_i32[t1]] < P)
                     return true;
 
-            PC2 = _mm256_set_epi32(imgp[tp.m256i_i32[7]], imgp[tp.m256i_i32[6]], imgp[tp.m256i_i32[5]], imgp[tp.m256i_i32[4]],
-                imgp[tp.m256i_i32[3]], imgp[tp.m256i_i32[2]], imgp[tp.m256i_i32[1]], imgp[tp.m256i_i32[0]]);
+            (*PC2) = _mm256_set_epi32(imgp[(*tp).m256i_i32[7]], imgp[(*tp).m256i_i32[6]], imgp[(*tp).m256i_i32[5]], imgp[(*tp).m256i_i32[4]],
+                imgp[(*tp).m256i_i32[3]], imgp[(*tp).m256i_i32[2]], imgp[(*tp).m256i_i32[1]], imgp[(*tp).m256i_i32[0]]);
             
-            if (_mm256_movemask_epi8(_mm256_cmpgt_epi32(PC2, tzero)) == 0xffffffffU)
+            if (_mm256_movemask_epi8(_mm256_cmpgt_epi32((*PC2), (*tzero))) == 0xffffffffU)
                 return false;
             
             // testing if the pixel preserves 8-connectivity
@@ -465,22 +535,6 @@ public:
         return ncount;
     }
 
-    int xh8()
-    {
-        int t1, t2, t3, conn;
-
-        for (t1 = 0, conn = 0; t1 < 8; t1 += 2)
-        {
-            t2 = (t1 + 1);
-            t3 = (t1 + 2) % 8;
-
-            if (imgp[pt + N[t1]] == 0 && (imgp[pt + N[t2]] != 0 || imgp[pt + N[t3]] != 0))
-                conn++;
-        }
-
-        return conn;
-    }
-
     bool isisolatedneighbor(int n, bool checklab = true)
     {
         int t1 = (n + 1) % 8, t2 = (n + 7) % 8, t3 = (n + 2) % 8, t4 = (n + 6) % 8;
@@ -521,14 +575,16 @@ Mat bwskel_helper::bwskel(Mat inputc, Mat dist)
     pair<Mat, Mat> nzpixels = find(dist, FindType::Indices);
     Mat result = Mat::zeros(dist.size(), inputc.type());
 
+    Mat ilab(result.size(), CV_32S);
     Mat lab(result.size(), CV_32S);
     int *labptr = lab.ptr<int>();
+    int *ilabptr = ilab.ptr<int>();
     uchar *resultptr = result.ptr<uchar>();
     uchar *inputptr = inputc.ptr<uchar>();
     int *nzpixelsptr = nzpixels.first.ptr<int>();
     float *distptr = dist.ptr<float>();
     int npixels = nzpixels.first.rows;
-    float P, temp;
+    float P;
     vector<float> V = { 0,0,0,0,0,0,0,0 };
     float maxv;
     int nc;
@@ -539,7 +595,7 @@ Mat bwskel_helper::bwskel(Mat inputc, Mat dist)
     int nend = npixels;
     int thpt = 0;
 
-    location *ploc = location::create(&inputc, &dist, &result);
+    location *ploc = new location(&inputc, &dist, &result);
     
     // Ridge detection
     for (int i = nstart; i < nend; i++)
@@ -565,11 +621,12 @@ Mat bwskel_helper::bwskel(Mat inputc, Mat dist)
 
     // First to find the connected components on ridge map.
     unordered_map<int, int> endptdict;
-    endptdict.reserve(300000);
+    endptdict.reserve(10000);
 
-    auto ridgecomps = getConnectedComponents(result);
-    int maxcompsize = 0;
-    connectedComponents(result, lab, 8, CV_32S);
+    auto ridgecomps = getConnectedComponents(result, lab);
+    size_t prevcomps = 0, prevendpts = 0, cendpts = 0;
+    int incomps = connectedComponents(inputc, ilab, 8, CV_32S);
+    vector<int> maxcompsize(incomps);
     labptr = lab.ptr<int>();
     ploc->setlab(lab);
 #define ROWIDX(x)  ((x) / dist.cols)
@@ -670,12 +727,14 @@ Mat bwskel_helper::bwskel(Mat inputc, Mat dist)
         }
         
         for (int i = 0; i < ridgecomps.size(); i++)
-            if (maxcompsize < ridgecomps[i].size())
-                maxcompsize = int(ridgecomps[i].size());
-        
+        {
+            if (maxcompsize[ilabptr[ridgecomps[i][0]]] < ridgecomps[i].size())
+                maxcompsize[ilabptr[ridgecomps[i][0]]] = int(ridgecomps[i].size());
+        }
+
         for (int i = 0; i < ridgecomps.size(); i++)
         {
-            if (ridgeendpts[i].size() == 0 && ridgecomps[i].size() != maxcompsize)
+            if (ridgeendpts[i].size() == 0 && ridgecomps[i].size() != maxcompsize[ilabptr[ridgecomps[i][0]]])
             {
                 for (int pt : ridgecomps[i])
                 {
@@ -813,7 +872,14 @@ Mat bwskel_helper::bwskel(Mat inputc, Mat dist)
             }
         }
         
-        if ((ridgecomps.size() == 0) || (ridgecomps.size() == 1 && ridgeendpts[0].size() == 0))
+        prevendpts = cendpts;
+        cendpts = 0;
+        for (int i = 0; i < ridgecomps.size(); i++)
+        {
+            cendpts += ridgeendpts[i].size();
+        }
+
+        if ((ridgecomps.size() == 0) || (ridgecomps.size() == 1 && ridgeendpts[0].size() == 0) || (prevcomps == ridgecomps.size() && prevendpts == cendpts))
             break;
 
         // For each inner end point, perform steepest ascent until a ridge is
@@ -1165,8 +1231,9 @@ Mat bwskel_helper::bwskel(Mat inputc, Mat dist)
             }
         }
         
-        ridgecomps = getConnectedComponents(result);
-        connectedComponents(result, lab, 8, CV_32S);
+        prevcomps = ridgecomps.size();
+        ridgecomps = getConnectedComponents(result, lab);
+        //connectedComponents(result, lab, 8, CV_32S);
         labptr = lab.ptr<int>();
         ploc->setlab(lab);
     } while (true); // || nitr <= 1);
@@ -1224,7 +1291,7 @@ void bwskel_helper::rectify_components(Mat& skeleton, Mat dist, Mat inputc)
     uchar *iptr = inputc.ptr<uchar>();
     int pt = 0;
 
-    location_base* ploc = location_base::create(&skeleton);
+    location_base* ploc = new location_base(&skeleton);
     ploc->setpt(ncols);
 
     // Operate on first row only and correct the components

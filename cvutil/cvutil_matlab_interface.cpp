@@ -1,29 +1,33 @@
-/*  Copyright (C) 2018-2019 Noble Research Institute, LLC
+/*  Copyright (C) 2018-2020 Noble Research Institute, LLC
 
 File: cvutil_matlab_interface.cpp
 
 Author: Anand Seethepalli (aseethepalli@noble.org)
-Principal Investigator: Larry York (lmyork@noble.org)
+Assistant Professor: Larry York (lmyork@noble.org)
 Root Phenomics Lab
 Noble Research Institute, LLC
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
-cvutil is free software: you can redistribute it and/or modify
-it under the terms of the NOBLE RESEARCH INSTITUTE, GENERAL PUBLIC LICENSE.
+cvutil is free software. You can redistribute it and/or modify
+it as permissible under the terms of the Noble General Public
+License as published by the Noble Research Institute, LLC. This
+license is available at the following link.
 
 cvutil is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-NOBLE RESEARCH INSTITUTE GENERAL PUBLIC LICENSE for more details.
+Noble General Public License for more details.
 
-You should have received a copy of the Noble Research Institute General Public License
+You should have received a copy of the Noble General Public License
 along with cvutil.  If not, see <https://github.com/noble-research-institute/cvutil/blob/master/LICENSE>.
 */
 
 #include "cvutil.h"
 #include "cvutil_matlab_interface.h"
 #include "cvutil_bwdist.h"
+
+#pragma warning(disable : 4752)
 
 using namespace std;
 using namespace cv;
@@ -78,11 +82,11 @@ namespace FloorCeilFunctions
         if (checkHardwareSupport(CPU_AVX2))
         {
             // Check for memory alignment before performing vector operations.
-            if (((unsigned long)data) & 0x1f)
+            if (((unsigned long long)data) & 0x1f)
             {
                 for (; i <= 0x1f && i <= nelements; i++)
                 {
-                    if (!(((unsigned long)&data[i]) & 0x1f))
+                    if (!(((unsigned long long)&data[i]) & 0x1f))
                         break;
                     else
                         data[i] = floor(data[i]);
@@ -124,11 +128,11 @@ namespace FloorCeilFunctions
         if (checkHardwareSupport(CPU_AVX2))
         {
             // Check for memory alignment before performing vector operations.
-            if (((unsigned long)data) & 0x1f)
+            if (((unsigned long long)data) & 0x1f)
             {
                 for (; i <= 0x1f && i <= nelements; i++)
                 {
-                    if (!(((unsigned long)&data[i]) & 0x1f))
+                    if (!(((unsigned long long)&data[i]) & 0x1f))
                         break;
                     else
                         data[i] = floor(data[i]);
@@ -170,11 +174,11 @@ namespace FloorCeilFunctions
         if (checkHardwareSupport(CPU_AVX2))
         {
             // Check for memory alignment before performing vector operations.
-            if (((unsigned long)data) & 0x1f)
+            if (((unsigned long long)data) & 0x1f)
             {
                 for (; i <= 0x1f && i <= nelements; i++)
                 {
-                    if (!(((unsigned long)&data[i]) & 0x1f))
+                    if (!(((unsigned long long)&data[i]) & 0x1f))
                         break;
                     else
                         data[i] = ceil(data[i]);
@@ -216,11 +220,11 @@ namespace FloorCeilFunctions
         if (checkHardwareSupport(CPU_AVX2))
         {
             // Check for memory alignment before performing vector operations.
-            if (((unsigned long)data) & 0x1f)
+            if (((unsigned long long)data) & 0x1f)
             {
                 for (; i <= 0x1f && i <= nelements; i++)
                 {
-                    if (!(((unsigned long) &data[i]) & 0x1f))
+                    if (!(((unsigned long long) &data[i]) & 0x1f))
                         break;
                     else
                         data[i] = ceil(data[i]);
@@ -309,7 +313,7 @@ pair<Mat, Mat> cvutil::imhist(Mat src)
         rectangle(histImg, Point(h*scale, 0), // s*scale),
             Point((h + 1)*scale - 1, cvRound(intensity * scale)), //(s + 1)*scale - 1),
             Scalar::all(255),
-            CV_FILLED);
+            FILLED);
     }
     return pair<Mat, Mat>();
 }
@@ -832,6 +836,6 @@ Mat cvutil::bwdist(Mat input)
 Mat cvutil::bwdist(Mat input, Mat& label, int labeltype)
 {
     Mat result;
-    distanceTransform(input, result, label, CV_DIST_L2, DIST_MASK_PRECISE, labeltype);
+    distanceTransform(input, result, label, DIST_L2, DIST_MASK_PRECISE, labeltype);
     return result;
 }
