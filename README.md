@@ -8,7 +8,7 @@ The library depends on OpenCV and Qt libraries. Please get the OpenCV 4.1 and Qt
 
 Copyright and License
 ---------------------
-Copyright (C) 2021, Anand Seethepalli and Larry York
+Copyright (C) 2021, Anand Seethepalli and Larry York  
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 Computer Vision UTILity toolkit (cvutil)
