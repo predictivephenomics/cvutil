@@ -1,26 +1,28 @@
-/*  Copyright (C) 2018-2020 Noble Research Institute, LLC
+/*
+Copyright (C) 2021, Anand Seethepalli and Larry York
+Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: MainWindow.cpp
 
-Author: Anand Seethepalli (aseethepalli@noble.org)
-Assistant Professor: Larry York (lmyork@noble.org)
-Root Phenomics Lab
-Noble Research Institute, LLC
+Authors:
+Anand Seethepalli (anand.seethepalli@yahoo.co.in)
+Larry York (larry.york@gmail.com)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
-cvutil is free software. You can redistribute it and/or modify
-it as permissible under the terms of the Noble General Public
-License as published by the Noble Research Institute, LLC. This
-license is available at the following link.
+cvutil is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-cvutil is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
+cvutil is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-Noble General Public License for more details.
+GNU General Public License for more details.
 
-You should have received a copy of the Noble General Public License
-along with cvutil.  If not, see <https://github.com/noble-research-institute/cvutil/blob/master/LICENSE>.
+You should have received a copy of the GNU General Public License
+along with cvutil; see the file COPYING.  If not, see
+<https://www.gnu.org/licenses/>.
 */
 
 #include "MainWindow.h"
@@ -2272,7 +2274,8 @@ void MainWindow::setInitialBanner(QPixmap initbanner, QPixmap orgbanner, string 
         appitem = view->scene()->addText(QString::fromStdString(appbanner), f2);
 
         appbanneritem = view->scene()->addPixmap(initbanner);
-        orgbanneritem = view->scene()->addPixmap(orgbanner);
+        if (!orgbanner.isNull())
+            orgbanneritem = view->scene()->addPixmap(orgbanner);
     }
 
     QPointF pwflow = wflowitem->pos();
@@ -2292,7 +2295,8 @@ void MainWindow::setInitialBanner(QPixmap initbanner, QPixmap orgbanner, string 
     //orgbanneritem->setPos(-(scenerect.width() / 2), (scenerect.height() - sorgbanner.height()));
 
     //orgbanneritem->setPos(view->mapToScene(QPoint(-sorgbanner.width(), view->height() - sorgbanner.height())));
-    orgbanneritem->setPos(view->mapToScene(QPoint(view->width() / 2 - sorgbanner.width() / 2, view->height() - 2 * sorgbanner.height())));
+    if (!orgbanner.isNull())
+        orgbanneritem->setPos(view->mapToScene(QPoint(view->width() / 2 - sorgbanner.width() / 2, view->height() - 2 * sorgbanner.height())));
     appbanneritem->setPos(view->mapToScene(QPoint(view->width() / 2 - sappbanner.width() / 2, - sappbanner.height())));
     appitem->setPos(view->mapToScene(QPoint(view->width() / 2 - sapp / 2, QFontMetrics(f2).height())));
     wflowitem->setPos(view->mapToScene(QPoint(view->width() / 2 - swflow / 2, QFontMetrics(f2).height() + 20 + QFontMetrics(f).height())));
