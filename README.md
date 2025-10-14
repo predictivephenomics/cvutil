@@ -1,13 +1,13 @@
-Computer Vision UTILity toolkit (CVUTIL)
-----------------------------------------
+# Computer Vision UTILity toolkit (CVUTIL)
+
 cvutil is a C++ computer vision library that extends the functionality of OpenCV. The library contains some functions that are frequently used computer vision developers for convenience. The library uses multi-threading, vectorization routines available in Intel's AVX 2.0 to execute algorithms in the library. The optimizaion can be disabled optionally.
 
-Dependencies
-------------
+#### Dependencies
+
 The library depends on OpenCV and Qt libraries. Please get the OpenCV 4.11 and Qt 6.9 libraries when using the cvutil library and compiling the source.
 
-Copyright and License
----------------------
+#### Copyright and License
+
 Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York  
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
@@ -20,8 +20,8 @@ cvutil is distributed in the hope that it will be useful, but WITHOUT ANY WARRAN
 
 You should have received a copy of the GNU General Public License along with cvutil; see the file COPYING.  If not, see <https://www.gnu.org/licenses/>.
 
-Authors
--------
+#### Authors
+
 Please send any comments/suggestions/improvements for the program to the authors:
 
 Anand Seethepalli  
