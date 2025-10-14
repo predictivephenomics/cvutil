@@ -8,7 +8,7 @@ The library depends on OpenCV and Qt libraries. Please get the OpenCV 4.11 and Q
 
 #### Copyright and License
 
-Copyright (C) 2025, Oak Ridge National Laboratory
+Copyright (C) 2025, Oak Ridge National Laboratory  
 Copyright (C) 2021, Anand Seethepalli and Larry York  
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
