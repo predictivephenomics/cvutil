@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_linesim.cpp
 
-Authors: 
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -43,7 +44,7 @@ along with cvutil; see the file COPYING.  If not, see
 using namespace std;
 using namespace cv;
 
-vector<Point> doughlas_peucker(vector<Point> contour, double epsilon)
+vector<Point> linesim_helper::doughlas_peucker(vector<Point> contour, double epsilon, bool isCircular)
 {
     double acoef, bcoef, ccoef, invdist, maxdist, maxadist = 0, adist, dist, distlongest = -1;
     int startidx = -1, stopidx = -1, maxidx = -1, updatept = 0, j;
@@ -72,7 +73,12 @@ vector<Point> doughlas_peucker(vector<Point> contour, double epsilon)
     return pixelstosave;*/
 
     startidx = 0;
-    contour.push_back(contour[0]);
+
+    // If the contour is circular (aka. closed contour), 
+    // add the starting point to the end.
+    if (isCircular)
+        contour.push_back(contour[0]);
+
     stopidx = static_cast<int>(contour.size()) - 1;
     updatept = 0;
     distlongest = 0;
@@ -167,7 +173,11 @@ vector<Point> doughlas_peucker(vector<Point> contour, double epsilon)
         }
     }
 
-    pixelstosave.pop_back();
+    // If the contour is circular (aka. closed contour), 
+    // remove the starting point at the end.
+    if (isCircular)
+        pixelstosave.pop_back();
+
     return pixelstosave;
 }
 
@@ -270,7 +280,7 @@ Mat linesim_helper::linesim_st(Mat inputc, double epsilon)
             }
             else if (contours[i].size() > 2)
             {
-                updatedcontour = doughlas_peucker(contours[i], epsilon);
+                updatedcontour = doughlas_peucker(contours[i], epsilon, true);
                 
                 if (!updatedcontour.empty())
                     contours[i] = updatedcontour;

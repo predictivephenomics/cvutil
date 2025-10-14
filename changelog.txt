@@ -1,3 +1,39 @@
+version 2.5.0
+-------------
+New features:
+* The source code to is ported to use cmake and support Windows
+  and Linux 64-bit builds.
+* Added a new function cvutil::doughlas_peucker() to smooth a 
+  piecewise line or a contour using Ramer-Douglas-Peucker line simple 
+  simplifier.
+* Added support to link and use cvutil from a console application by 
+  initializing only QCoreApplication in cvutil::init() function.
+
+Fixes:
+* The source code is updated to C++17 standard.
+* The source code is updated to use Qt 6.9 and OpenCV 4.11.
+* MainWindow/BatchProcessor.cpp: The file list is sorted in natural
+  sorting before batch processing.
+* MainWindow/MainWindow.cpp: Fixed app crash in the function
+  MainWindow::loadNextImage() when using left or right arrows to browse
+  a folder of images while also externally changing the image list in 
+  the folder.
+* MainWindow/MainWindow.cpp: Fixed MainWindow::populateFileList() to 
+  browse images in natural sorting.
+* cvutil_bwdist.cpp: Replaced non-conformant AVX intrinsics code.
+* cvutil_bwskel.cpp: Replaced non-conformant AVX intrinsics code.
+* cvutil_core.cpp: Fixed app crash due to boundary access error in 
+  cvutil::bwskel() function. The boundary is now increased to 2 pixel
+  width.
+* cvutil_core.cpp: Fixed app crash when initializing Qt in Linux in 
+  cvutil::init() function. The function is updated to take argc by 
+  reference to fix the crash.
+* cvutil_types.h: Removed HWND variable to make the code portable on 
+  Linux.
+* cvutil_videowriter.cpp: Replaced all references to exception() by 
+  runtime_error() to make the source C++17 compliant, buildable in
+  Linux and with several compilers.
+
 version 2.0.3
 -------------
 Source code updated to reflect transfer of copyright from Noble Research
@@ -34,7 +70,7 @@ New features:
   9.  The main window supports plugin system. When a plugin is loaded, its
       settings are populated to the left of the main window. Plugins are
       independent modules that implement a specific procedure/method/algorithm
-      that can be attached to and configured frim inside the main window.
+      that can be attached to and configured from inside the main window.
   10. Main window supports browsing images in the same folder using left 
       and right arrow keys.
   11. Supports "Run analysis" button in the toolbar, that invokes the current 
@@ -57,9 +93,9 @@ New features:
 * Implemented stacked barplot functionality.
 
 Fixes:
-* cvutil_bwdist.cpp: Supressed compiler warning when using AVX 2.0 
+* cvutil_bwdist.cpp: Suppressed compiler warning when using AVX 2.0 
   vector instructions.
-* cvutil_bwskel.cpp: Supressed compiler warning when using AVX 2.0 
+* cvutil_bwskel.cpp: Suppressed compiler warning when using AVX 2.0 
   vector instructions.
 * cvutil_bwskel.cpp: Fixed code to use 32-byte aligned memory when
   using vector variables.

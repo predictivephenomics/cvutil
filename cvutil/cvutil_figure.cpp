@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_figure.cpp
 
-Authors: 
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -54,7 +55,7 @@ along with cvutil; see the file COPYING.  If not, see
 
 #include <QtCore/QPoint>
 
-QT_CHARTS_USE_NAMESPACE
+//QT_CHARTS_USE_NAMESPACE
 
 QT_BEGIN_NAMESPACE
 class QAction;

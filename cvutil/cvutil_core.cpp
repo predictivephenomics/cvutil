@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_core.cpp
 
-Authors: 
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -33,6 +34,7 @@ along with cvutil; see the file COPYING.  If not, see
 #include "cvutil_types.h"
 
 #include "MainWindow/MainWindow.h"
+#include "MainWindow/MaterialStyle.h"
 
 using namespace std;
 using namespace cv;
@@ -489,7 +491,7 @@ void cvutil::window(cv::String winname, Mat m)
         wd->winname = winname;
 
         namedWindow(winname, WINDOW_NORMAL);
-        wd->hWnd = (HWND)cvGetWindowHandle(winname.c_str());
+        //wd->hWnd = (HWND)cvGetWindowHandle(winname.c_str());
         wd->xsize = m.cols;
         wd->ysize = m.rows;
 
@@ -547,20 +549,20 @@ Mat cvutil::bwskel(Mat input, Mat distance)
     // Round to 3 decimal places.
     //distc = floor(distc * 1000.0f + 0.5f) / 1000.0f;
     
-    // Add 1-pixel width of black pixels as boundary to the input image to avoid
+    // Add 2-pixel width of black pixels as boundary to the input image to avoid
     // boundary errors.
-    hconcat(Mat::zeros(distc.rows, 1, distc.type()), distc, distc);
-    hconcat(distc, Mat::zeros(distc.rows, 1, distc.type()), distc);
+    hconcat(Mat::zeros(distc.rows, 2, distc.type()), distc, distc);
+    hconcat(distc, Mat::zeros(distc.rows, 2, distc.type()), distc);
 
-    vconcat(Mat::zeros(1, distc.cols, distc.type()), distc, distc);
-    vconcat(distc, Mat::zeros(1, distc.cols, distc.type()), distc);
+    vconcat(Mat::zeros(2, distc.cols, distc.type()), distc, distc);
+    vconcat(distc, Mat::zeros(2, distc.cols, distc.type()), distc);
 
-    hconcat(Mat::zeros(inputc.rows, 1, inputc.type()), inputc, inputc);
-    hconcat(inputc, Mat::zeros(inputc.rows, 1, inputc.type()), inputc);
+    hconcat(Mat::zeros(inputc.rows, 2, inputc.type()), inputc, inputc);
+    hconcat(inputc, Mat::zeros(inputc.rows, 2, inputc.type()), inputc);
 
-    vconcat(Mat::zeros(1, inputc.cols, inputc.type()), inputc, inputc);
-    vconcat(inputc, Mat::zeros(1, inputc.cols, inputc.type()), inputc);
-    
+    vconcat(Mat::zeros(2, inputc.cols, inputc.type()), inputc, inputc);
+    vconcat(inputc, Mat::zeros(2, inputc.cols, inputc.type()), inputc);
+
     // To make Mats continuous
     Mat dist = distc.clone();
     inputc = inputc.clone();
@@ -570,7 +572,12 @@ Mat cvutil::bwskel(Mat input, Mat distance)
     
     bwskel_helper::rectify_components(out, dist, inputc);
     
-    return out.rowRange(1, out.rows - 1).colRange(1, out.cols - 1).clone();
+    return out.rowRange(2, out.rows - 2).colRange(2, out.cols - 2).clone();
+}
+
+std::vector<cv::Point> cvutil::doughlas_peucker(std::vector<cv::Point> contour, double epsilon, bool isCircular)
+{
+    return linesim_helper::doughlas_peucker(contour, epsilon, isCircular);
 }
 
 Mat cvutil::linesim(Mat input, LineSimplificationType type, double epsilon)
@@ -764,20 +771,31 @@ void cvutil::ForEachFileInPath(string path, void(*func)(string filename))
         func(s);*/
 }
 
-void cvutil::init(int argc, char *argv[], bool useOpt)
+void cvutil::init(int &argc, char *argv[], bool useOpt, bool useGUI)
 {
     // Enable the OpenCV to use hardware acceleration.
     setUseOptimized(useOpt);
 
-    // Iniliatize Qt sub-system.
-    GlobalValues::app = new QApplication(argc, argv);
+    // Initialize Qt sub-system.
+    if (useGUI)
+    {
+        GlobalValues::app = new QApplication(argc, argv);
+        GlobalValues::coreapp = GlobalValues::app;
+    }
+    else
+    {
+        GlobalValues::app = nullptr;
+        GlobalValues::coreapp = new QCoreApplication(argc, argv);
+    }
+    
+    //QApplication::setStyle(new MaterialStyle());
 
     // Seed the random number generator
     srand(time(0));
 
     // Set text encoding to UTF-8 for the program
-    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
-    QTextCodec::setCodecForLocale(codec);
+    //QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+    //QTextCodec::setCodecForLocale(codec);
 }
 
 void cvutil::drawText(Mat &GeomLayer, const string & text, Point org, Scalar color, int rightmargin, int thickness)

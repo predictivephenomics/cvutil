@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_types.h
 
-Authors: 
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -38,7 +39,7 @@ namespace cvutil
     {
         cv::Mat m;
         std::string winname;
-        HWND hWnd;
+        // HWND hWnd;
 
         // To be used only by the event handler
         bool panmode = false;
@@ -54,10 +55,13 @@ namespace cvutil
     {
     public:
         // For use with profiling operations
+        // Global counters
+        // To be used in tic/toc functions
         static clock_t start;
         static clock_t stop;
-
+        
         // Qt specific
+        static QCoreApplication *coreapp;
         static QApplication *app;
 
         //static bool cswitch;

@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: PluginInterfaces.h
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -30,13 +31,14 @@ along with cvutil; see the file COPYING.  If not, see
 #ifndef PLUGININTERFACES_H
 #define PLUGININTERFACES_H
 
-//#include "ImageProcessor.h"
-//#include <cvutil.h>
+// To disable warnings from external headers.
+#pragma warning(push, 0)
 #include <opencv2/opencv.hpp>
 #include <QtWidgets/QtWidgets>
 #include <QtCharts/QtCharts>
+#pragma warning(pop)
 
-#ifdef WIN32
+#ifdef _WIN64
 #if (!defined PLUGINAPI)
 #if (defined PLUGINMANAGER_SOURCE)
 #define PLUGINAPI __declspec(dllexport) 
@@ -142,21 +144,21 @@ class ValueRangeParameter : public ValueParameter<T>
 {
 public:
     ValueRangeParameter(std::string _Name, std::string _DisplayText, T _minVal, T _maxVal) :
-        ValueParameter(_Name, _DisplayText, _minVal, _maxVal)
+        ValueParameter<T>(_Name, _DisplayText, _minVal, _maxVal)
     {
         if (typeid(T) == typeid(int))
-            type = ParameterType::IntegerRange;
+            ValueParameter<T>::type = ParameterType::IntegerRange;
         else if (typeid(T) == typeid(float))
-            type = ParameterType::FloatRange;
+            ValueParameter<T>::type = ParameterType::FloatRange;
         else
             throw (std::string("In function:") + std::string(__func__) + std::string("Unknown value parameter."));
 
         if (_maxVal <= _minVal)
             throw (std::string("In function:") + std::string(__func__) + std::string("maxVal must be greater than minVal."));
 
-        minVal = _minVal;
-        maxVal = _maxVal;
-        value = minVal;
+        ValueParameter<T>::minVal = _minVal;
+        ValueParameter<T>::maxVal = _maxVal;
+        ValueParameter<T>::value = _minVal;
     }
 };
 
@@ -173,34 +175,34 @@ protected:
     T alt_value;
 public:
     LimitRangeParameter(std::string _Name, std::string _DisplayText, T _minVal, T _maxVal) :
-        ValueParameter(_Name, _DisplayText, _minVal, _maxVal)
+        ValueParameter<T>(_Name, _DisplayText, _minVal, _maxVal)
     {
         if (typeid(T) == typeid(int))
-            type = ParameterType::IntegerSpan;
+            ValueParameter<T>::type = ParameterType::IntegerSpan;
         /*else if (typeid(T) == typeid(float))
-            type = ParameterType::FloatRange;*/
+            ValueParameter<T>::type = ParameterType::FloatRange;*/
         else
             throw (std::string("In function:") + std::string(__func__) + std::string("Unknown value parameter."));
 
         if (_maxVal <= _minVal)
             throw (std::string("In function:") + std::string(__func__) + std::string("maxVal must be greater than minVal."));
 
-        minVal = _minVal;
-        maxVal = _maxVal;
-        value = minVal;
-        alt_value = maxVal;
+        ValueParameter<T>::minVal = _minVal;
+        ValueParameter<T>::maxVal = _maxVal;
+        ValueParameter<T>::value = _minVal;
+        alt_value = _maxVal;
     }
 
     virtual void setValue(T _value)
     {
         if (_value > alt_value)
             throw (std::string("In function:") + std::string(__func__) + std::string("Lower limit is less than upper limit."));
-        value = _value;
+        ValueParameter<T>::value = _value;
     }
     virtual T alt_getValue() { return alt_value; }
     virtual void alt_setValue(T _value)
     {
-        if (_value < value)
+        if (_value < ValueParameter<T>::value)
             throw (std::string("In function:") + std::string(__func__) + std::string("Upper limit is less than lower limit."));
         alt_value = _value;
     }

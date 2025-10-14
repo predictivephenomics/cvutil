@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: stdproto.h
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -30,6 +31,8 @@ along with cvutil; see the file COPYING.  If not, see
 #ifndef STDPROTO_H
 #define STDPROTO_H
 
+// To disable warnings from external headers
+#pragma warning(push, 0)
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/highgui/highgui_c.h>
@@ -43,35 +46,57 @@ along with cvutil; see the file COPYING.  If not, see
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+
+#if defined(_WIN32) || defined(_WIN64)
 #include <tchar.h>
+#endif
+
 //#include <experimental/filesystem>
 #include <iomanip>
 #include <iostream>
 #include <fstream>
+#include <chrono>
 #include <thread>
 #include <sys/stat.h>
 
 // Defaulting to Intel's AVX2 and FMA
 #include <immintrin.h>
 
-#include <Windows.h>
+// #if defined(_MSC_VER) && !defined(__clang__)
+// #define M2I32(x, idx) (x).m256i_i32[(idx)]
+// #define M2F32(x, idx) (x).m256_f32[(idx)]
+// #define M2U32(x, idx) (x).m256i_u32[(idx)]
+// #elif defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)
+// #define M2I32(x, idx) (x)[(idx)]
+// #define M2F32(x, idx) (x)[(idx)]
+// #define M2U32(x, idx) (x)[(idx)]
+// #endif
 
-#include <cuda_runtime.h>
+// #define _MM_FUNC_I32(func, v, m) \
+//     (func)((v)[M2I32((m), 7)], (v)[M2I32((m), 6)], (v)[M2I32((m), 5)], (v)[M2I32((m), 4)], (v)[M2I32((m), 3)], (v)[M2I32((m), 2)], (v)[M2I32((m), 1)], (v)[M2I32((m), 0)])
+// #define _MM_FUNC_I32_STEP(func, v, m, s) \
+//     (func)((v)[M2I32((m), 7) + (s)], (v)[M2I32((m), 6) + (s)], (v)[M2I32((m), 5) + (s)], (v)[M2I32((m), 4) + (s)], (v)[M2I32((m), 3) + (s)], (v)[M2I32((m), 2) + (s)], (v)[M2I32((m), 1) + (s)], (v)[M2I32((m), 0) + (s)])
+// #define _MM_FUNC_F32(func, v, m) \
+//     (func)((v)[M2F32((m), 7)], (v)[M2F32((m), 6)], (v)[M2F32((m), 5)], (v)[M2F32((m), 4)], (v)[M2F32((m), 3)], (v)[M2F32((m), 2)], (v)[M2F32((m), 1)], (v)[M2F32((m), 0)])
+
+//#include <Windows.h>
 
 // UI facilities
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QtWidgets>
 
-#ifdef WIN32
+#ifdef _MSC_VER
 #if (defined _WINDLL && defined CVUTIL_SOURCE)
 #define CVUTILAPI __declspec(dllexport) 
 #else
 #define CVUTILAPI __declspec(dllimport)
 #endif
+#elif defined(__GNUC__) || defined(__GNUG__) || defined(__clang__)
+#define CVUTILAPI __attribute__((visibility("default")))
 #endif
 //#endif
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && (defined(_WIN32) || defined(_WIN64))
 #define _CRTDBG_MAP_ALLOC  
 #include <stdlib.h>
 #include <crtdbg.h>
@@ -84,6 +109,8 @@ _crtBreakAlloc = (x);
 #else
 #include <stdlib.h>
 #endif
+
+#pragma warning(pop)
 
 #define CVUTIL_SQRT2 1.414213562373095048801688724209
 

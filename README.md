@@ -4,10 +4,11 @@ cvutil is a C++ computer vision library that extends the functionality of OpenCV
 
 Dependencies
 ------------
-The library depends on OpenCV and Qt libraries. Please get the OpenCV 4.1 and Qt 5.12.3 libraries when using the cvutil library and compiling the source.
+The library depends on OpenCV and Qt libraries. Please get the OpenCV 4.11 and Qt 6.9 libraries when using the cvutil library and compiling the source.
 
 Copyright and License
 ---------------------
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York  
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
@@ -24,8 +25,8 @@ Authors
 Please send any comments/suggestions/improvements for the program to the authors:
 
 Anand Seethepalli  
-anand.seethepalli@yahoo.co.in
+seethepallia@ornl.gov
 
 Larry York  
-larry.york@gmail.com
+yorklm@ornl.gov
 

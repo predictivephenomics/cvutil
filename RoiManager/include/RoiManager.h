@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: RoiManager.h
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -30,14 +31,17 @@ along with cvutil; see the file COPYING.  If not, see
 #ifndef ROIMANAGER_H
 #define ROIMANAGER_H
 
+// To disable warnings from external headers.
+#pragma warning(push, 0)
 #include <QtWidgets/QtWidgets>
 #include <opencv2/opencv.hpp>
 
 #include <iostream>
 #include <fstream>
+#pragma warning(pop)
 
 
-#ifdef WIN32
+#ifdef _WIN64
 #if (!defined IPAPI)
 #if (defined ROIMANAGER_SOURCE)
 #define IPAPI __declspec(dllexport)
@@ -45,15 +49,23 @@ along with cvutil; see the file COPYING.  If not, see
 #define IPAPI __declspec(dllimport)
 
 #ifdef _DEBUG
-#pragma comment(lib, "Qt5Cored.lib")
-#pragma comment(lib, "Qt5Guid.lib")
-#pragma comment(lib, "Qt5Widgetsd.lib")
+#pragma comment(lib, "Qt6Cored.lib")
+#pragma comment(lib, "Qt6Guid.lib")
+#pragma comment(lib, "Qt6Widgetsd.lib")
 #else
-#pragma comment(lib, "Qt5Core.lib")
-#pragma comment(lib, "Qt5Gui.lib")
-#pragma comment(lib, "Qt5Widgets.lib")
+#pragma comment(lib, "Qt6Core.lib")
+#pragma comment(lib, "Qt6Gui.lib")
+#pragma comment(lib, "Qt6Widgets.lib")
 #endif
 
+#endif
+#endif
+#elif defined(__linux__) || defined(__APPLE__)
+#if (!defined IPAPI)
+#if (defined ROIMANAGER_SOURCE)
+#define IPAPI __attribute__((visibility("default")))
+#else
+#define IPAPI
 #endif
 #endif
 #endif

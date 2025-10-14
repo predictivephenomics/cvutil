@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_bwskel.cpp
 
-Authors: 
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -40,6 +41,35 @@ using namespace cv;
 // Similar to a linked list, but it is 2-dimensional. Also, 
 // it doesn't allocate/free memory. Only operates on already 
 // allocated continuous memory.
+
+/* 
+* Class: location_base
+* Similar to a linked list, but it is 2-dimensional. Also, 
+* it doesn't allocate/free memory. Only operates on already 
+* allocated continuous memory.
+*  
+* This class can also be thought of as a spaceship operator. An object
+* of this class hovers on a pixel in a given binary image and retreives 
+* the pixel information with respect to its neighbors. This class does
+* not consider boundary conditions. Hence, we need to pass a binary image
+* with extra boundaries.
+*/
+
+#if defined (__linux__)
+static inline void *_aligned_malloc(size_t size, size_t alignment)
+{
+    // aligned_alloc requires size to be a multiple of alignment
+    size_t aligned_size = ((size + alignment - 1) / alignment) * alignment;
+    return aligned_alloc(alignment, aligned_size);
+}
+
+static inline void _aligned_free(void *ptr)
+{
+    free(ptr);
+}
+
+#endif
+
 class location_base
 {
     const unsigned int vecsize = 256;
@@ -47,46 +77,46 @@ class location_base
 
     void init_vectors()
     {
-        // We want these vaiables to be 32-byte aligned, as the alignment
-        // cannot be enforced if they are not pointers in the class.
-        // This problem may be resolved in the newer standard of C++ (c++17).
-        tn = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        tn2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        tp = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        tp2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        tele = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        tzero = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        tpt = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        PC2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        PC3 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
-        PC4 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        // // We want these vaiables to be 32-byte aligned, as the alignment
+        // // cannot be enforced if they are not pointers in the class.
+        // // This problem may be resolved in the newer standard of C++ (c++17).
+        // tn = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment)); // -
+        // tn2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment)); // -
+        // tp = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment)); // -
+        // tp2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment)); // -
+        // tele = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment)); // -
+        // tzero = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment)); // -
+        // tpt = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment)); // -
+        // PC2 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        // PC3 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
+        // PC4 = static_cast<__m256i *>(_aligned_malloc(vecsize, alignment));
 
-        PT = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
-        PN = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
-        PC = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
+        // PT = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
+        // PN = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
+        // PC = static_cast<__m256 *>(_aligned_malloc(vecsize, alignment));
     }
 
     void delete_vectors()
     {
-        _aligned_free(tn);
-        _aligned_free(tn2);
-        _aligned_free(tp);
-        _aligned_free(tp2);
-        _aligned_free(tele);
-        _aligned_free(tzero);
-        _aligned_free(tpt);
-        _aligned_free(PC2);
-        _aligned_free(PC3);
-        _aligned_free(PC4);
+        // _aligned_free(tn);
+        // _aligned_free(tn2);
+        // _aligned_free(tp);
+        // _aligned_free(tp2);
+        // _aligned_free(tele);
+        // _aligned_free(tzero);
+        // _aligned_free(tpt);
+        // _aligned_free(PC2);
+        // _aligned_free(PC3);
+        // _aligned_free(PC4);
 
-        _aligned_free(PT);
-        _aligned_free(PN);
-        _aligned_free(PC);
+        // _aligned_free(PT);
+        // _aligned_free(PN);
+        // _aligned_free(PC);
     }
 protected:
     int N[8], N2[8];
-    __m256i *tn, *tn2, *tp, *tp2, *tele, *tzero, *tpt, *PC2, *PC3, *PC4;
-    __m256 *PT, *PN, *PC;
+    alignas(32) __m256i tn, tn2, tp, tp2, tele, tzero, tpt, PC2, PC3, PC4;
+    alignas(32) __m256 PT, PN, PC;
 
     // Single channel, CV_8U image matrix
     uchar* imgp = nullptr;
@@ -115,11 +145,11 @@ public:
         {
             init_vectors();
 
-            (*tn) = _mm256_loadu_si256((__m256i const *)N);
-            (*tn2) = _mm256_loadu_si256((__m256i const *)N2);
+            tn = _mm256_loadu_si256((__m256i const *)N);
+            tn2 = _mm256_loadu_si256((__m256i const *)N2);
 
-            (*tele) = _mm256_set1_epi32(nelements);
-            (*tzero) = _mm256_set1_epi32(0);
+            tele = _mm256_set1_epi32(nelements);
+            tzero = _mm256_set1_epi32(0);
         }
     }
 
@@ -141,11 +171,11 @@ public:
         {
             init_vectors();
 
-            (*tn) = _mm256_loadu_si256((__m256i const *)N);
-            (*tn2) = _mm256_loadu_si256((__m256i const *)N2);
+            tn = _mm256_loadu_si256((__m256i const *)N);
+            tn2 = _mm256_loadu_si256((__m256i const *)N2);
 
-            (*tele) = _mm256_set1_epi32(nelements);
-            (*tzero) = _mm256_set1_epi32(0);
+            tele = _mm256_set1_epi32(nelements);
+            tzero = _mm256_set1_epi32(0);
         }
     }
     
@@ -154,10 +184,6 @@ public:
         if (avx2)
             delete_vectors();
     }
-    /*static location_base* create(Mat *_img, int _pt = 0)
-    {
-        return new location_base(_img, _pt);
-    }*/
 
     // We never perform a deep copy. We just copy the pointers and the
     // current position pt.
@@ -356,84 +382,68 @@ public:
 
     bool isridge()
     {
+        int t1 = 0, t3 = 0, conn = 0, i1 = 0, i2 = 0, i3 = 0;
+        int t2 = t1 + 4;
+        float P = distp[pt];
+        alignas(32) int indices[8];
+        bool error_found = false;
+        
         if (avx2)
         {
-            int t1 = 0, t3 = 0, conn = 0, i1 = 0, i2 = 0, i3 = 0;
-            int t2 = t1 + 4;
-            float P = distp[pt];
+            tpt = _mm256_set1_epi32(pt);
+            tp = _mm256_add_epi32(tpt, tn);
 
-            (*tpt) = _mm256_set1_epi32(pt);
-            (*tp) = _mm256_add_epi32((*tpt), (*tn));
+            PT = _mm256_set1_ps(distp[pt]);
+            // PN = _MM_FUNC_I32(_mm256_set_ps, distp, tp);
+            PN = _mm256_i32gather_ps(distp, tp, 4);
 
-            (*PT) = _mm256_set1_ps(distp[pt]);
-            (*PN) = _mm256_set_ps(distp[(*tp).m256i_i32[7]], distp[(*tp).m256i_i32[6]], distp[(*tp).m256i_i32[5]], distp[(*tp).m256i_i32[4]],
-                distp[(*tp).m256i_i32[3]], distp[(*tp).m256i_i32[2]], distp[(*tp).m256i_i32[1]], distp[(*tp).m256i_i32[0]]);
-            (*PC) = _mm256_cmp_ps((*PT), (*PN), _CMP_GT_OQ);
+            PC = _mm256_cmp_ps(PT, PN, _CMP_GT_OQ);
 
-            (*PC2) = _mm256_castps_si256((*PC));
-            (*PC3) = _mm256_permute2f128_si256((*PC2), (*PC2), 0x81);
-            (*PC4) = _mm256_and_si256((*PC2), (*PC3));
-            
-            if (_mm256_movemask_epi8((*PC4)) > 0)
+            PC2 = _mm256_castps_si256(PC);
+            PC3 = _mm256_permute2f128_si256(PC2, PC2, 0x81);
+            PC4 = _mm256_and_si256(PC2, PC3);
+
+            if (_mm256_movemask_epi8(PC4) > 0)
                 return true;
 
-            (*PC3) = _mm256_permute2f128_si256((*PC2), (*PC2), 0x1);
-            (*PC) = _mm256_cmp_ps((*PT), (*PN), _CMP_EQ_OQ);
-            (*PC2) = _mm256_castps_si256((*PC));
-            (*PC2) = _mm256_and_si256((*PC2), (*PC3));
-            (*tp2) = _mm256_add_epi32((*tpt), (*tn2));
-            (*PC3) = _mm256_cmpgt_epi32((*tele), (*tp2));
-            (*PC2) = _mm256_and_si256((*PC2), (*PC3));
-            (*PC3) = _mm256_or_si256(_mm256_cmpgt_epi32((*tp2), (*tzero)), _mm256_cmpeq_epi32((*tp2), (*tzero)));
-            (*PC2) = _mm256_and_si256((*PC2), (*PC3));
+            PC3 = _mm256_permute2f128_si256(PC2, PC2, 0x1);
+            PC = _mm256_cmp_ps(PT, PN, _CMP_EQ_OQ);
+            PC2 = _mm256_castps_si256(PC);
+            PC2 = _mm256_and_si256(PC2, PC3);
+            tp2 = _mm256_add_epi32(tpt, tn2);
+            PC3 = _mm256_cmpgt_epi32(tele, tp2);
+            PC2 = _mm256_and_si256(PC2, PC3);
+            PC3 = _mm256_or_si256(_mm256_cmpgt_epi32(tp2, tzero), _mm256_cmpeq_epi32(tp2, tzero));
+            PC2 = _mm256_and_si256(PC2, PC3);
 
-            for (t1 = 0; t1 < 8; t1++)
-                if ((*PC2).m256i_u32[t1] && distp[(*tp2).m256i_i32[t1]] < P)
-                    return true;
-
-            (*PC2) = _mm256_set_epi32(imgp[(*tp).m256i_i32[7]], imgp[(*tp).m256i_i32[6]], imgp[(*tp).m256i_i32[5]], imgp[(*tp).m256i_i32[4]],
-                imgp[(*tp).m256i_i32[3]], imgp[(*tp).m256i_i32[2]], imgp[(*tp).m256i_i32[1]], imgp[(*tp).m256i_i32[0]]);
+            // for (t1 = 0; t1 < 8; t1++)
+            //     if (M2U32(PC2, t1) && distp[M2I32(tp2, t1)] < P)
+            //         return true;
+            // Gather 8 float values from distp at offsets in (*tp2)
+            PC = _mm256_i32gather_ps(distp, tp2, 4);
+            PC = _mm256_cmp_ps(PC, PT, _CMP_LT_OQ);
+            PC3 = _mm256_castps_si256(PC);
+            PC2 = _mm256_and_si256(PC2, PC3);
             
-            if (_mm256_movemask_epi8(_mm256_cmpgt_epi32((*PC2), (*tzero))) == 0xffffffffU)
+            // Convert to mask
+            if (((uint32_t)_mm256_movemask_epi8(PC2)) > 0)
+                return true;
+            
+            // Gather 8 uchar values from imgp at offsets in (*tp)
+            // (*PC2) = _MM_FUNC_I32(_mm256_set_epi32, imgp, (*tp));
+
+            // We cannot use _mm256_i32gather_si256 here as it requires 32-bit integers
+            // but the imgp is of type uchar.
+            _mm256_store_si256((__m256i*)indices, tp);
+            PC2 = _mm256_set_epi32(
+                imgp[indices[7]], imgp[indices[6]], imgp[indices[5]], imgp[indices[4]],
+                imgp[indices[3]], imgp[indices[2]], imgp[indices[1]], imgp[indices[0]]);
+            
+            if (_mm256_movemask_epi8(_mm256_cmpgt_epi32(PC2, tzero)) == 0xffffffffU)
                 return false;
-            
-            // testing if the pixel preserves 8-connectivity
-            for (t1 = 0, conn = 0; t1 < 8; t1 += 2)
-            {
-                t2 = (t1 + 1);
-                t3 = (t1 + 2) % 8;
-
-                if (imgp[pt + N[t1]] == 0 && (imgp[pt + N[t2]] != 0 || imgp[pt + N[t3]] != 0))
-                    conn++;
-            }
-
-            if (conn > 1)
-                return true;
-
-            // testing if the pixel preserves 4-connectivity
-            for (t1 = 0, conn = 0; t1 < 8; t1 += 2)
-            {
-                t2 = (t1 + 1);
-                t3 = (t1 + 2) % 8;
-
-                i1 = imgp[pt + N[t1]] / 255;
-                i2 = imgp[pt + N[t2]] / 255;
-                i3 = imgp[pt + N[t3]] / 255;
-
-                conn += (i1 - i1 * i2 * i3);
-            }
-
-            if (conn > 1)
-                return true;
-
-            return false;
         }
         else
         {
-            int t1 = 0, t3 = 0, conn = 0, i1 = 0, i2 = 0, i3 = 0;
-            int t2 = t1 + 4;
-            float P = distp[pt];
-
             for (t1 = 0, t2 = 4; t1 < 4; t1++, t2++)
             {
                 if (distp[pt + N[t1]] < P && distp[pt + N[t2]] < P)
@@ -454,38 +464,38 @@ public:
 
             if (conn == 8)
                 return false;
-
-            // testing if the pixel preserves 8-connectivity
-            for (t1 = 0, conn = 0; t1 < 8; t1 += 2)
-            {
-                t2 = (t1 + 1);
-                t3 = (t1 + 2) % 8;
-
-                if (imgp[pt + N[t1]] == 0 && (imgp[pt + N[t2]] != 0 || imgp[pt + N[t3]] != 0))
-                    conn++;
-            }
-
-            if (conn > 1)
-                return true;
-
-            // testing if the pixel preserves 4-connectivity
-            for (t1 = 0, conn = 0; t1 < 8; t1 += 2)
-            {
-                t2 = (t1 + 1);
-                t3 = (t1 + 2) % 8;
-
-                i1 = imgp[pt + N[t1]] / 255;
-                i2 = imgp[pt + N[t2]] / 255;
-                i3 = imgp[pt + N[t3]] / 255;
-
-                conn += (i1 - i1 * i2 * i3);
-            }
-
-            if (conn > 1)
-                return true;
-
-            return false;
         }
+
+        // testing if the pixel preserves 8-connectivity
+        for (t1 = 0, conn = 0; t1 < 8; t1 += 2)
+        {
+            t2 = (t1 + 1);
+            t3 = (t1 + 2) % 8;
+
+            if (imgp[pt + N[t1]] == 0 && (imgp[pt + N[t2]] != 0 || imgp[pt + N[t3]] != 0))
+                conn++;
+        }
+
+        if (conn > 1)
+            return true;
+
+        // testing if the pixel preserves 4-connectivity
+        for (t1 = 0, conn = 0; t1 < 8; t1 += 2)
+        {
+            t2 = (t1 + 1);
+            t3 = (t1 + 2) % 8;
+
+            i1 = imgp[pt + N[t1]] / 255;
+            i2 = imgp[pt + N[t2]] / 255;
+            i3 = imgp[pt + N[t3]] / 255;
+
+            conn += (i1 - i1 * i2 * i3);
+        }
+
+        if (conn > 1)
+            return true;
+
+        return false;
     }
 
     bool isridgeendpt()

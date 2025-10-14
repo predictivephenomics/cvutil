@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: logger.cpp
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -85,7 +86,7 @@ void logger(QtMsgType type, const QMessageLogContext &context, const QString &ms
             abort();
         }
 
-        if (MainWindow::logbox != 0 /*&& lastmsg != msg*/)
+        if (MainWindow::logbox != nullptr /*&& lastmsg != msg*/)
         {
             MainWindow::logbox->append(helper + msg);
             lastmsg = msg;

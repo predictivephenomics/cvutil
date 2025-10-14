@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_videowriter.cpp
 
-Authors: 
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -166,7 +167,7 @@ CVUTILAPI Ptr<IVWriter> cvutil::createVideoWriter(VideoWriterType type)
     case VideoWriterType::Image:
         return makePtr<FrameWriter>();
     default:
-        throw exception("Unknown video format specified.");
+        throw runtime_error("Unknown video format specified.");
     }
 }
 
@@ -179,6 +180,6 @@ CVUTILAPI Ptr<IVWriter> cvutil::createVideoWriter(string filepath, VideoWriterTy
     case VideoWriterType::Image:
         return makePtr<FrameWriter>(filepath);
     default:
-        throw exception("Unknown video format specified.");
+        throw runtime_error("Unknown video format specified.");
     }
 }

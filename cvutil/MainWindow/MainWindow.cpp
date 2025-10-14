@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: MainWindow.cpp
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -28,6 +29,7 @@ along with cvutil; see the file COPYING.  If not, see
 #include "MainWindow.h"
 #include "BatchProcessor.h"
 #include "logger.h"
+#include "helper_functions.h"
 
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QHBoxLayout>
@@ -41,7 +43,7 @@ using namespace std;
 using namespace cv;
 //using namespace cvutil;
 
-QTextEdit *MainWindow::logbox = 0;
+QTextEdit *MainWindow::logbox = nullptr;
 
 #ifdef _DEBUG
 bool MainWindow::showDebugMessages = true;
@@ -51,7 +53,7 @@ bool MainWindow::showDebugMessages = false;
 
 void GraphicsView::wheelEvent(QWheelEvent *e)
 {
-    SetScale(scaleval * pow(scalemultiplier, e->delta() / 120.0));
+    SetScale(scaleval * pow(scalemultiplier, e->angleDelta().y() / 120.0));
 }
 
 void GraphicsView::dragEnterEvent(QDragEnterEvent * event)
@@ -1023,10 +1025,10 @@ void MainWindow::processImage()
 
                 QString roinameval = QString::fromStdString(mgr->getROIName(i));
                 roisync.push_back(roinameval);
-                filenamesync.push_back(QString::fromStdString(experimental::filesystem::path(inputfilename.toStdString()).filename().string()));
+                filenamesync.push_back(QString::fromStdString(filesystem::path(inputfilename.toStdString()).filename().string()));
 
                 int row = featureitemmodel->rowCount();
-                QStandardItem *item = new QStandardItem(QString::fromStdString(experimental::filesystem::path(inputfilename.toStdString()).filename().string()));
+                QStandardItem *item = new QStandardItem(QString::fromStdString(filesystem::path(inputfilename.toStdString()).filename().string()));
                 featureitemmodel->setItem(row, 0, item);
                 item = new QStandardItem(roinameval);
                 featureitemmodel->setItem(row, 1, item);
@@ -1724,21 +1726,27 @@ void MainWindow::open()
 void MainWindow::loadNextImage(bool front)
 {
     if (currimagelistidx == -1)
-        return;
-
-    if (front)
     {
-        currimagelistidx++;
-
-        if (imagelist.size() == currimagelistidx)
-            currimagelistidx = 0;
+        if (inputfileloc.isEmpty())
+            return;
+        currimagelistidx = 0;
     }
     else
     {
-        currimagelistidx--;
+        if (front)
+        {
+            currimagelistidx++;
 
-        if (currimagelistidx < 0)
-            currimagelistidx = imagelist.size() - 1;
+            if (imagelist.size() == currimagelistidx)
+                currimagelistidx = 0;
+        }
+        else
+        {
+            currimagelistidx--;
+
+            if (currimagelistidx < 0)
+                currimagelistidx = imagelist.size() - 1;
+        }
     }
 
     open(inputfileloc + "/" + imagelist[currimagelistidx], false);
@@ -1751,17 +1759,12 @@ void MainWindow::populateFileList()
     QStringList filt;
     filt << "*.png" << "*.jpg" << "*.jpeg" << "*.bmp" << "*.tif" << "*.tiff";
     imagelist = loc.entryList(filt, QDir::Files, QDir::Name);
+    natsort(imagelist);
 
-    currimagelistidx = -1;
-    
-    for (int i = 0; i < imagelist.size(); i++)
-    {
-        if (imagelist[i] == imgbasename)
-        {
-            currimagelistidx = i;
-            break;
-        }
-    }
+    if (imagelist.count() == 0)
+        currimagelistidx = -1;
+    else
+        currimagelistidx = imagelist.indexOf(imgbasename);
 }
 
 void MainWindow::watcherDirectoryChanged(const QString & path)
@@ -2284,22 +2287,17 @@ void MainWindow::setInitialBanner(QPixmap initbanner, QPixmap orgbanner, string 
     QPointF papp = appitem->pos();
     qreal sapp = appitem->boundingRect().width(); // QFontMetrics(f2).width(QString::fromStdString(appbanner)); // appitem->textWidth();
 
-    QPointF pappbanner = appbanneritem->pos();
     QSize sappbanner = initbanner.size();
-
-    QPointF porgbanner = orgbanneritem->pos();
     QSize sorgbanner = orgbanner.size();
-
-    QRectF scenerect = view->scene()->sceneRect();
 
     //orgbanneritem->setPos(-(scenerect.width() / 2), (scenerect.height() - sorgbanner.height()));
 
     //orgbanneritem->setPos(view->mapToScene(QPoint(-sorgbanner.width(), view->height() - sorgbanner.height())));
+    appbanneritem->setPos(view->mapToScene(QPoint(view->width() / 2 - sappbanner.width() / 2, 0)));
+    appitem->setPos(view->mapToScene(QPoint(view->width() / 2 - sapp / 2, sappbanner.height())));
+    wflowitem->setPos(view->mapToScene(QPoint(view->width() / 2 - swflow / 2, sappbanner.height() + QFontMetrics(f2).height() + 20)));
     if (!orgbanner.isNull())
         orgbanneritem->setPos(view->mapToScene(QPoint(view->width() / 2 - sorgbanner.width() / 2, view->height() - 2 * sorgbanner.height())));
-    appbanneritem->setPos(view->mapToScene(QPoint(view->width() / 2 - sappbanner.width() / 2, - sappbanner.height())));
-    appitem->setPos(view->mapToScene(QPoint(view->width() / 2 - sapp / 2, QFontMetrics(f2).height())));
-    wflowitem->setPos(view->mapToScene(QPoint(view->width() / 2 - swflow / 2, QFontMetrics(f2).height() + 20 + QFontMetrics(f).height())));
 }
 
 void MainWindow::copyItems()

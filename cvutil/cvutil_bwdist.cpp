@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_bwdist.cpp
 
-Authors: 
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -156,7 +157,9 @@ void horizontal_st_avx(Mat& result, Mat& arrmat, int tid = -1)
     float s = 0;
     int stepsize = 8, mask;
     int nstart, nend, nthreads = getNumberOfCPUs();
-
+    alignas(32) int indices[8];
+    alignas(32) float fvals[8];
+    
     Mat vmat, zmat;
 
     vmat = Mat::zeros(8, max(ncol, nrow), CV_32SC1);
@@ -168,7 +171,7 @@ void horizontal_st_avx(Mat& result, Mat& arrmat, int tid = -1)
     a = arrmat.ptr<int>();
 
     // AVX specific
-    __m256i tbuf1, tbuf2, vk, vofkidx, vofk, vj, tzero, tone, vstep, va, vi;
+    __m256i tbuf1, tbuf2, vk, vofkidx, vofkidx_step, vofk, vj, tzero, tone, vstep, va, vi;
     __m256 fbuf, fbuf1, fbuf2, fbuf3, fbuf4, nflt, flt, fzero, zofk;
 
     // Thread management
@@ -225,34 +228,34 @@ void horizontal_st_avx(Mat& result, Mat& arrmat, int tid = -1)
             vk = _mm256_set1_epi32(0);
             vj = _mm256_add_epi32(vj, vstep);
 
-            vi = _mm256_set_epi32(a[vj.m256i_i32[7]], a[vj.m256i_i32[6]], a[vj.m256i_i32[5]], a[vj.m256i_i32[4]],
-                a[vj.m256i_i32[3]], a[vj.m256i_i32[2]], a[vj.m256i_i32[1]], a[vj.m256i_i32[0]]);
-
+            // vi = _MM_FUNC_I32(_mm256_set_epi32, a, vj);
+            vi = _mm256_i32gather_epi32(a, vj, 4);
+            
             for (j = 1; j < ncol; j++)
             {
                 va = _mm256_set1_epi32(j);
                 va = _mm256_add_epi32(vi, va);
 
                 // Get resultptr[a[i] + j]
-                fbuf = _mm256_set_ps(resultptr[va.m256i_i32[7]], resultptr[va.m256i_i32[6]], resultptr[va.m256i_i32[5]], resultptr[va.m256i_i32[4]],
-                    resultptr[va.m256i_i32[3]], resultptr[va.m256i_i32[2]], resultptr[va.m256i_i32[1]], resultptr[va.m256i_i32[0]]);
-
+                // fbuf = _MM_FUNC_I32(_mm256_set_ps, resultptr, va);
+                fbuf = _mm256_i32gather_ps(resultptr, va, 4);
+                
                 // Get v[k]
                 vofkidx = _mm256_mullo_epi32(vk, vstep);
                 vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
 
-                vofk = _mm256_set_epi32(v[vofkidx.m256i_i32[7]], v[vofkidx.m256i_i32[6]], v[vofkidx.m256i_i32[5]], v[vofkidx.m256i_i32[4]],
-                    v[vofkidx.m256i_i32[3]], v[vofkidx.m256i_i32[2]], v[vofkidx.m256i_i32[1]], v[vofkidx.m256i_i32[0]]);
-
+                // vofk = _MM_FUNC_I32(_mm256_set_epi32, v, vofkidx);
+                vofk = _mm256_i32gather_epi32(v, vofkidx, 4);
+                
                 // Get z[k]
-                zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7]], z[vofkidx.m256i_i32[6]], z[vofkidx.m256i_i32[5]], z[vofkidx.m256i_i32[4]],
-                    z[vofkidx.m256i_i32[3]], z[vofkidx.m256i_i32[2]], z[vofkidx.m256i_i32[1]], z[vofkidx.m256i_i32[0]]);
-
+                // zofk = _MM_FUNC_I32(_mm256_set_ps, z, vofkidx);
+                zofk = _mm256_i32gather_ps(z, vofkidx, 4);
+                
                 // Get resultptr[a[i] + v[k]]
                 va = _mm256_add_epi32(vi, vofk);
-                fbuf1 = _mm256_set_ps(resultptr[va.m256i_i32[7]], resultptr[va.m256i_i32[6]], resultptr[va.m256i_i32[5]], resultptr[va.m256i_i32[4]],
-                    resultptr[va.m256i_i32[3]], resultptr[va.m256i_i32[2]], resultptr[va.m256i_i32[1]], resultptr[va.m256i_i32[0]]);
-
+                // fbuf1 = _MM_FUNC_I32(_mm256_set_ps, resultptr, va);
+                fbuf1 = _mm256_i32gather_ps(resultptr, va, 4);
+                
                 fbuf4 = _mm256_set1_ps(float(j));
                 fbuf2 = _mm256_cvtepi32_ps(vofk);
                 fbuf1 = _mm256_sub_ps(fbuf, fbuf1);             // resultptr[a[i] + j] - resultptr[a[i] + v[k]]
@@ -274,27 +277,30 @@ void horizontal_st_avx(Mat& result, Mat& arrmat, int tid = -1)
                     }
                     else
                     {
-                        for (int p = 0; p < 8; p++)
-                            if (fbuf1.m256_f32[p] != 0)
-                                vk.m256i_i32[p]--;
+                        // for (int p = 0; p < 8; p++)
+                        //     if (M2F32(fbuf1, p) != 0)
+                        //         M2I32(vk, p)--;
+                        __m256i fbuf1_int = _mm256_castps_si256(fbuf1);
+                        __m256i masked_sub = _mm256_and_si256(tone, fbuf1_int);
+                        vk = _mm256_sub_epi32(vk, masked_sub);
                     }
 
                     // Reconstruct v[k]
                     vofkidx = _mm256_mullo_epi32(vk, vstep);
                     vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
 
-                    vofk = _mm256_set_epi32(v[vofkidx.m256i_i32[7]], v[vofkidx.m256i_i32[6]], v[vofkidx.m256i_i32[5]], v[vofkidx.m256i_i32[4]],
-                        v[vofkidx.m256i_i32[3]], v[vofkidx.m256i_i32[2]], v[vofkidx.m256i_i32[1]], v[vofkidx.m256i_i32[0]]);
-
+                    // vofk = _MM_FUNC_I32(_mm256_set_epi32, v, vofkidx);
+                    vofk = _mm256_i32gather_epi32(v, vofkidx, 4);
+                    
                     // Reconstruct z[k]
-                    zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7]], z[vofkidx.m256i_i32[6]], z[vofkidx.m256i_i32[5]], z[vofkidx.m256i_i32[4]],
-                        z[vofkidx.m256i_i32[3]], z[vofkidx.m256i_i32[2]], z[vofkidx.m256i_i32[1]], z[vofkidx.m256i_i32[0]]);
-
+                    // zofk = _MM_FUNC_I32(_mm256_set_ps, z, vofkidx);
+                    zofk = _mm256_i32gather_ps(z, vofkidx, 4);
+                    
                     // Get new resultptr[a[i] + v[k]]
                     va = _mm256_add_epi32(vi, vofk);
-                    fbuf1 = _mm256_set_ps(resultptr[va.m256i_i32[7]], resultptr[va.m256i_i32[6]], resultptr[va.m256i_i32[5]], resultptr[va.m256i_i32[4]],
-                        resultptr[va.m256i_i32[3]], resultptr[va.m256i_i32[2]], resultptr[va.m256i_i32[1]], resultptr[va.m256i_i32[0]]);
-
+                    // fbuf1 = _MM_FUNC_I32(_mm256_set_ps, resultptr, va);
+                    fbuf1 = _mm256_i32gather_ps(resultptr, va, 4);
+                    
                     fbuf2 = _mm256_cvtepi32_ps(vofk);
                     fbuf1 = _mm256_sub_ps(fbuf, fbuf1);             // resultptr[a[i] + j] - resultptr[a[i] + v[k]]
                     fbuf3 = _mm256_sub_ps(fbuf4, fbuf2);            // (j - v[k])
@@ -312,11 +318,20 @@ void horizontal_st_avx(Mat& result, Mat& arrmat, int tid = -1)
                 vofkidx = _mm256_mullo_epi32(vk, vstep);
                 vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
 
+                // for (int p = 0; p < 8; p++)
+                // {
+                //     v[M2I32(vofkidx, p)] = j;
+                //     z[M2I32(vofkidx, p)] = M2F32(fbuf3, p);
+                //     z[M2I32(vofkidx, p) + stepsize] = FLT_MAX;
+                // }
+                _mm256_store_si256((__m256i *)indices, vofkidx);
+                _mm256_store_ps(fvals, fbuf3);
                 for (int p = 0; p < 8; p++)
                 {
-                    v[vofkidx.m256i_i32[p]] = j;
-                    z[vofkidx.m256i_i32[p]] = fbuf3.m256_f32[p];
-                    z[vofkidx.m256i_i32[p] + stepsize] = FLT_MAX;
+                    int idx = indices[p];
+                    v[idx] = j;
+                    z[idx] = fvals[p];
+                    z[idx + stepsize] = FLT_MAX;
                 }
             }
 
@@ -324,8 +339,11 @@ void horizontal_st_avx(Mat& result, Mat& arrmat, int tid = -1)
             vk = _mm256_set1_epi32(0);
             vofkidx = _mm256_mullo_epi32(vk, vstep);
             vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
-            zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7] + stepsize], z[vofkidx.m256i_i32[6] + stepsize], z[vofkidx.m256i_i32[5] + stepsize], z[vofkidx.m256i_i32[4] + stepsize],
-                z[vofkidx.m256i_i32[3] + stepsize], z[vofkidx.m256i_i32[2] + stepsize], z[vofkidx.m256i_i32[1] + stepsize], z[vofkidx.m256i_i32[0] + stepsize]);
+            // zofk = _MM_FUNC_I32_STEP(_mm256_set_ps, z, vofkidx, stepsize);
+            // zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7] + stepsize], z[vofkidx.m256i_i32[6] + stepsize], z[vofkidx.m256i_i32[5] + stepsize], z[vofkidx.m256i_i32[4] + stepsize], 
+            //                      z[vofkidx.m256i_i32[3] + stepsize], z[vofkidx.m256i_i32[2] + stepsize], z[vofkidx.m256i_i32[1] + stepsize], z[vofkidx.m256i_i32[0] + stepsize]);
+            vofkidx_step = _mm256_add_epi32(vofkidx, vstep);
+            zofk = _mm256_i32gather_ps(z, vofkidx_step, 4);
 
             for (j = 0; j < ncol; j++)
             {
@@ -341,33 +359,41 @@ void horizontal_st_avx(Mat& result, Mat& arrmat, int tid = -1)
                     }
                     else
                     {
-                        for (int p = 0; p < 8; p++)
-                            if (fbuf1.m256_f32[p] != 0)
-                                vk.m256i_i32[p]++;
+                        // for (int p = 0; p < 8; p++)
+                        //     if (M2F32(fbuf1, p) != 0)
+                        //         M2I32(vk, p)++;
+                        __m256i fbuf1_int = _mm256_castps_si256(fbuf1);
+                        __m256i masked_sub = _mm256_and_si256(tone, fbuf1_int);
+                        vk = _mm256_add_epi32(vk, masked_sub);
                     }
 
                     vofkidx = _mm256_mullo_epi32(vk, vstep);
                     vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
-                    zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7] + stepsize], z[vofkidx.m256i_i32[6] + stepsize], z[vofkidx.m256i_i32[5] + stepsize], z[vofkidx.m256i_i32[4] + stepsize],
-                        z[vofkidx.m256i_i32[3] + stepsize], z[vofkidx.m256i_i32[2] + stepsize], z[vofkidx.m256i_i32[1] + stepsize], z[vofkidx.m256i_i32[0] + stepsize]);
+                    // zofk = _MM_FUNC_I32_STEP(_mm256_set_ps, z, vofkidx, stepsize);
+                    vofkidx_step = _mm256_add_epi32(vofkidx, vstep);
+                    zofk = _mm256_i32gather_ps(z, vofkidx_step, 4);
                     fbuf1 = _mm256_cmp_ps(zofk, fbuf4, _CMP_LT_OQ);
                     mask = _mm256_movemask_ps(fbuf1);
                 }
 
-                vofk = _mm256_set_epi32(v[vofkidx.m256i_i32[7]], v[vofkidx.m256i_i32[6]], v[vofkidx.m256i_i32[5]], v[vofkidx.m256i_i32[4]],
-                    v[vofkidx.m256i_i32[3]], v[vofkidx.m256i_i32[2]], v[vofkidx.m256i_i32[1]], v[vofkidx.m256i_i32[0]]);
-
+                // vofk = _MM_FUNC_I32(_mm256_set_epi32, v, vofkidx);
+                vofk = _mm256_i32gather_epi32(v, vofkidx, 4);
+                
                 // Get new resultptr[a[i] + v[k]]
                 va = _mm256_add_epi32(vi, vofk);
-                fbuf1 = _mm256_set_ps(resultptr[va.m256i_i32[7]], resultptr[va.m256i_i32[6]], resultptr[va.m256i_i32[5]], resultptr[va.m256i_i32[4]],
-                    resultptr[va.m256i_i32[3]], resultptr[va.m256i_i32[2]], resultptr[va.m256i_i32[1]], resultptr[va.m256i_i32[0]]);
-
+                // fbuf1 = _MM_FUNC_I32(_mm256_set_ps, resultptr, va);
+                fbuf1 = _mm256_i32gather_ps(resultptr, va, 4);
+                
                 fbuf2 = _mm256_cvtepi32_ps(vofk);
                 fbuf4 = _mm256_sub_ps(fbuf4, fbuf2);            // Compute (j - v[k])
                 fbuf1 = _mm256_fmadd_ps(fbuf4, fbuf4, fbuf1);   // Compute ((j - v[k]) * (j - v[k]) + resultptr[a[i] + v[k]])
 
+                // for (int p = 0; p < 8; p++)
+                //     resultptr[M2I32(vi, p) + j] = M2F32(fbuf1, p);
+                _mm256_store_si256((__m256i *)indices, vi);
+                _mm256_store_ps(fvals, fbuf1);
                 for (int p = 0; p < 8; p++)
-                    resultptr[vi.m256i_i32[p] + j] = fbuf1.m256_f32[p];
+                    resultptr[indices[p] + j] = fvals[p];
             }
         }
         else
@@ -416,7 +442,9 @@ void vertical_st_avx(Mat& result, Mat& arrmat, int tid = -1)
     float s = 0;
     int stepsize = 8, mask;
     int nstart, nend, nthreads = getNumberOfCPUs();
-
+    alignas(32) int indices[8];
+    alignas(32) float fvals[8];
+    
     Mat vmat, zmat, dmat;
 
     vmat = Mat::zeros(8, max(ncol, nrow), CV_32SC1);
@@ -430,7 +458,7 @@ void vertical_st_avx(Mat& result, Mat& arrmat, int tid = -1)
     a = arrmat.ptr<int>();
 
     // AVX specific
-    __m256i tbuf1, vk, vofkidx, vofk, vj, tzero, tone, vstep, va;
+    __m256i tbuf1, vk, vofkidx, vofkidx_step, vofk, vj, tzero, tone, vstep, va;
     __m256 fbuf, fbuf1, fbuf2, fbuf3, fbuf4, nflt, flt, fzero, zofk;
 
     // Thread management
@@ -477,20 +505,20 @@ void vertical_st_avx(Mat& result, Mat& arrmat, int tid = -1)
                 vofkidx = _mm256_mullo_epi32(vk, vstep);
                 vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
 
-                vofk = _mm256_set_epi32(v[vofkidx.m256i_i32[7]], v[vofkidx.m256i_i32[6]], v[vofkidx.m256i_i32[5]], v[vofkidx.m256i_i32[4]],
-                    v[vofkidx.m256i_i32[3]], v[vofkidx.m256i_i32[2]], v[vofkidx.m256i_i32[1]], v[vofkidx.m256i_i32[0]]);
-
+                // vofk = _MM_FUNC_I32(_mm256_set_epi32, v, vofkidx);
+                vofk = _mm256_i32gather_epi32(v, vofkidx, 4);
+                
                 // Get z[k]
-                zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7]], z[vofkidx.m256i_i32[6]], z[vofkidx.m256i_i32[5]], z[vofkidx.m256i_i32[4]],
-                    z[vofkidx.m256i_i32[3]], z[vofkidx.m256i_i32[2]], z[vofkidx.m256i_i32[1]], z[vofkidx.m256i_i32[0]]);
-
+                // zofk = _MM_FUNC_I32(_mm256_set_ps, z, vofkidx);
+                zofk = _mm256_i32gather_ps(z, vofkidx, 4);
+                
                 // Get resultptr[a[v[k]] + j]
-                va = _mm256_set_epi32(a[vofk.m256i_i32[7]], a[vofk.m256i_i32[6]], a[vofk.m256i_i32[5]], a[vofk.m256i_i32[4]],
-                    a[vofk.m256i_i32[3]], a[vofk.m256i_i32[2]], a[vofk.m256i_i32[1]], a[vofk.m256i_i32[0]]);
+                // va = _MM_FUNC_I32(_mm256_set_epi32, a, vofk);
+                va = _mm256_i32gather_epi32(a, vofk, 4);
                 va = _mm256_add_epi32(va, vj);
-                fbuf1 = _mm256_set_ps(resultptr[va.m256i_i32[7]], resultptr[va.m256i_i32[6]], resultptr[va.m256i_i32[5]], resultptr[va.m256i_i32[4]],
-                    resultptr[va.m256i_i32[3]], resultptr[va.m256i_i32[2]], resultptr[va.m256i_i32[1]], resultptr[va.m256i_i32[0]]);
-
+                // fbuf1 = _MM_FUNC_I32(_mm256_set_ps, resultptr, va);
+                fbuf1 = _mm256_i32gather_ps(resultptr, va, 4);
+                
                 fbuf4 = _mm256_set1_ps(float(i));
                 fbuf2 = _mm256_cvtepi32_ps(vofk);
                 fbuf1 = _mm256_sub_ps(fbuf, fbuf1);             // resultptr[a[i] + j] - resultptr[a[v[k]] + j]
@@ -512,29 +540,32 @@ void vertical_st_avx(Mat& result, Mat& arrmat, int tid = -1)
                     }
                     else
                     {
-                        for (int p = 0; p < 8; p++)
-                            if (fbuf1.m256_f32[p] != 0)
-                                vk.m256i_i32[p]--;
+                        // for (int p = 0; p < 8; p++)
+                        //     if (M2F32(fbuf1, p) != 0)
+                        //         M2I32(vk, p)--;
+                        __m256i fbuf1_int = _mm256_castps_si256(fbuf1);
+                        __m256i masked_sub = _mm256_and_si256(tone, fbuf1_int);
+                        vk = _mm256_sub_epi32(vk, masked_sub);
                     }
 
                     // Reconstruct v[k]
                     vofkidx = _mm256_mullo_epi32(vk, vstep);
                     vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
 
-                    vofk = _mm256_set_epi32(v[vofkidx.m256i_i32[7]], v[vofkidx.m256i_i32[6]], v[vofkidx.m256i_i32[5]], v[vofkidx.m256i_i32[4]],
-                        v[vofkidx.m256i_i32[3]], v[vofkidx.m256i_i32[2]], v[vofkidx.m256i_i32[1]], v[vofkidx.m256i_i32[0]]);
-
+                    // vofk = _MM_FUNC_I32(_mm256_set_epi32, v, vofkidx);
+                    vofk = _mm256_i32gather_epi32(v, vofkidx, 4);
+                    
                     // Reconstruct z[k]
-                    zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7]], z[vofkidx.m256i_i32[6]], z[vofkidx.m256i_i32[5]], z[vofkidx.m256i_i32[4]],
-                        z[vofkidx.m256i_i32[3]], z[vofkidx.m256i_i32[2]], z[vofkidx.m256i_i32[1]], z[vofkidx.m256i_i32[0]]);
-
+                    // zofk = _MM_FUNC_I32(_mm256_set_ps, z, vofkidx);
+                    zofk = _mm256_i32gather_ps(z, vofkidx, 4);
+                    
                     // Get new resultptr[a[v[k]] + j]
-                    va = _mm256_set_epi32(a[vofk.m256i_i32[7]], a[vofk.m256i_i32[6]], a[vofk.m256i_i32[5]], a[vofk.m256i_i32[4]],
-                        a[vofk.m256i_i32[3]], a[vofk.m256i_i32[2]], a[vofk.m256i_i32[1]], a[vofk.m256i_i32[0]]);
+                    // va = _MM_FUNC_I32(_mm256_set_epi32, a, vofk);
+                    va = _mm256_i32gather_epi32(a, vofk, 4);
                     va = _mm256_add_epi32(va, vj);
-                    fbuf1 = _mm256_set_ps(resultptr[va.m256i_i32[7]], resultptr[va.m256i_i32[6]], resultptr[va.m256i_i32[5]], resultptr[va.m256i_i32[4]],
-                        resultptr[va.m256i_i32[3]], resultptr[va.m256i_i32[2]], resultptr[va.m256i_i32[1]], resultptr[va.m256i_i32[0]]);
-
+                    // fbuf1 = _MM_FUNC_I32(_mm256_set_ps, resultptr, va);
+                    fbuf1 = _mm256_i32gather_ps(resultptr, va, 4);
+                    
                     fbuf2 = _mm256_cvtepi32_ps(vofk);
                     fbuf1 = _mm256_sub_ps(fbuf, fbuf1);             // resultptr[a[i] + j] - resultptr[a[v[k]] + j]
                     fbuf3 = _mm256_sub_ps(fbuf4, fbuf2);            // (i - v[k])
@@ -554,11 +585,20 @@ void vertical_st_avx(Mat& result, Mat& arrmat, int tid = -1)
                 vofkidx = _mm256_mullo_epi32(vk, vstep);
                 vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
 
+                // for (int p = 0; p < 8; p++)
+                // {
+                //     v[M2I32(vofkidx, p)] = i;
+                //     z[M2I32(vofkidx, p)] = M2F32(fbuf3, p);
+                //     z[M2I32(vofkidx, p) + stepsize] = FLT_MAX;
+                // }
+                _mm256_store_si256((__m256i *)indices, vofkidx);
+                _mm256_store_ps(fvals, fbuf3);
                 for (int p = 0; p < 8; p++)
                 {
-                    v[vofkidx.m256i_i32[p]] = i;
-                    z[vofkidx.m256i_i32[p]] = fbuf3.m256_f32[p];
-                    z[vofkidx.m256i_i32[p] + stepsize] = FLT_MAX;
+                    int idx = indices[p];
+                    v[idx] = i;
+                    z[idx] = fvals[p];
+                    z[idx + stepsize] = FLT_MAX;
                 }
             }
 
@@ -566,9 +606,10 @@ void vertical_st_avx(Mat& result, Mat& arrmat, int tid = -1)
             vk = _mm256_set1_epi32(0);
             vofkidx = _mm256_mullo_epi32(vk, vstep);
             vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
-            zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7] + stepsize], z[vofkidx.m256i_i32[6] + stepsize], z[vofkidx.m256i_i32[5] + stepsize], z[vofkidx.m256i_i32[4] + stepsize],
-                z[vofkidx.m256i_i32[3] + stepsize], z[vofkidx.m256i_i32[2] + stepsize], z[vofkidx.m256i_i32[1] + stepsize], z[vofkidx.m256i_i32[0] + stepsize]);
-
+            // zofk = _MM_FUNC_I32_STEP(_mm256_set_ps, z, vofkidx, stepsize);
+            vofkidx_step = _mm256_add_epi32(vofkidx, vstep);
+            zofk = _mm256_i32gather_ps(z, vofkidx_step, 4);
+            
             for (i = 0; i < nrow; i++)
             {
                 fbuf4 = _mm256_set1_ps(float(i));
@@ -583,29 +624,33 @@ void vertical_st_avx(Mat& result, Mat& arrmat, int tid = -1)
                     }
                     else
                     {
-                        for (int p = 0; p < 8; p++)
-                            if (fbuf1.m256_f32[p] != 0)
-                                vk.m256i_i32[p]++;
+                        // for (int p = 0; p < 8; p++)
+                        //     if (M2F32(fbuf1, p) != 0)
+                        //         M2I32(vk, p)++;
+                        __m256i fbuf1_int = _mm256_castps_si256(fbuf1);
+                        __m256i masked_sub = _mm256_and_si256(tone, fbuf1_int);
+                        vk = _mm256_add_epi32(vk, masked_sub);
                     }
 
                     vofkidx = _mm256_mullo_epi32(vk, vstep);
                     vofkidx = _mm256_add_epi32(vofkidx, tbuf1);
-                    zofk = _mm256_set_ps(z[vofkidx.m256i_i32[7] + stepsize], z[vofkidx.m256i_i32[6] + stepsize], z[vofkidx.m256i_i32[5] + stepsize], z[vofkidx.m256i_i32[4] + stepsize],
-                        z[vofkidx.m256i_i32[3] + stepsize], z[vofkidx.m256i_i32[2] + stepsize], z[vofkidx.m256i_i32[1] + stepsize], z[vofkidx.m256i_i32[0] + stepsize]);
+                    // zofk = _MM_FUNC_I32_STEP(_mm256_set_ps, z, vofkidx, stepsize);
+                    vofkidx_step = _mm256_add_epi32(vofkidx, vstep);
+                    zofk = _mm256_i32gather_ps(z, vofkidx_step, 4);
                     fbuf1 = _mm256_cmp_ps(zofk, fbuf4, _CMP_LT_OQ);
                     mask = _mm256_movemask_ps(fbuf1);
                 }
 
-                vofk = _mm256_set_epi32(v[vofkidx.m256i_i32[7]], v[vofkidx.m256i_i32[6]], v[vofkidx.m256i_i32[5]], v[vofkidx.m256i_i32[4]],
-                    v[vofkidx.m256i_i32[3]], v[vofkidx.m256i_i32[2]], v[vofkidx.m256i_i32[1]], v[vofkidx.m256i_i32[0]]);
-
+                // vofk = _MM_FUNC_I32(_mm256_set_epi32, v, vofkidx);
+                vofk = _mm256_i32gather_epi32(v, vofkidx, 4);
+                
                 // Get new resultptr[a[v[k]] + j]
-                va = _mm256_set_epi32(a[vofk.m256i_i32[7]], a[vofk.m256i_i32[6]], a[vofk.m256i_i32[5]], a[vofk.m256i_i32[4]],
-                    a[vofk.m256i_i32[3]], a[vofk.m256i_i32[2]], a[vofk.m256i_i32[1]], a[vofk.m256i_i32[0]]);
+                // va = _MM_FUNC_I32(_mm256_set_epi32, a, vofk);
+                va = _mm256_i32gather_epi32(a, vofk, 4);
                 va = _mm256_add_epi32(va, vj);
-                fbuf1 = _mm256_set_ps(resultptr[va.m256i_i32[7]], resultptr[va.m256i_i32[6]], resultptr[va.m256i_i32[5]], resultptr[va.m256i_i32[4]],
-                    resultptr[va.m256i_i32[3]], resultptr[va.m256i_i32[2]], resultptr[va.m256i_i32[1]], resultptr[va.m256i_i32[0]]);
-
+                // fbuf1 = _MM_FUNC_I32(_mm256_set_ps, resultptr, va);
+                fbuf1 = _mm256_i32gather_ps(resultptr, va, 4);
+                
                 fbuf2 = _mm256_cvtepi32_ps(vofk);
                 fbuf4 = _mm256_sub_ps(fbuf4, fbuf2);            // Compute (i - v[k])
                 fbuf1 = _mm256_fmadd_ps(fbuf4, fbuf4, fbuf1);   // Compute ((i - v[k]) * (i - v[k]) + resultptr[a[v[k]] + p + j])
@@ -702,13 +747,13 @@ Mat bwdist_helper::bwdist_mt(Mat m)
     std::thread *threads = new std::thread[nthreads];
 
     for (int tid = 0; tid < nthreads; tid++)
-        threads[tid] = std::thread(horizontal_st_avx, result, arrmat, tid);
+        threads[tid] = std::thread(horizontal_st_avx, std::ref(result), std::ref(arrmat), tid);
 
     for (int tid = 0; tid < nthreads; tid++)
         threads[tid].join();
 
     for (int tid = 0; tid < nthreads; tid++)
-        threads[tid] = std::thread(vertical_st_avx, result, arrmat, tid);
+        threads[tid] = std::thread(vertical_st_avx, std::ref(result), std::ref(arrmat), tid);
 
     for (int tid = 0; tid < nthreads; tid++)
         threads[tid].join();

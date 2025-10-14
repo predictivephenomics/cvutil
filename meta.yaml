@@ -1,0 +1,37 @@
+package:
+  name: cvutil
+  version: "2.5.0"
+
+source:
+  path: .
+
+build:
+  number: 1
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - cmake
+    - make
+  host:
+    - opencv >=4.11
+    - qt6-main >=6.9.1
+    - qt6-charts >=6.9.1
+    - libgl-devel # [linux]
+  run:
+    - opencv >=4.11
+    - qt6-main >=6.9.1
+    - qt6-charts >=6.9.1
+    - libstdcxx-ng
+    - libgcc-ng
+
+about:
+  home: https://github.com/predictivephenomics/cvutil
+  license: GPL-3.0
+  license_family: GPL
+  license_file: LICENSE
+  maintainer: seethepallia@ornl.gov
+  summary: Computer Vision Utility Toolkit
+  description: |
+    Computer Vision Utility Toolkit

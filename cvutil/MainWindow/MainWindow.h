@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: MainWindow.h
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -30,7 +31,11 @@ along with cvutil; see the file COPYING.  If not, see
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+// To disable warnings on external headers.
+#pragma warning(push, 0)
 #include <QtWidgets/QtWidgets>
+#pragma warning(pop)
+
 //#include <ImageProcessor.h>
 
 #include <PluginInterfaces.h>
@@ -131,8 +136,9 @@ public:
     {
         QString headerText = model()->headerData(logicalIndex, QHeaderView::orientation(), Qt::DisplayRole).toString();
         ensurePolished();
-        auto options = QHeaderView::viewOptions();
-        auto metrics = QFontMetrics(options.font);
+        //auto options = QHeaderView::viewOptions();
+        //auto metrics = QFontMetrics(options.font);
+        auto metrics = QFontMetrics(this->fontMetrics());
         auto maxWidth = QHeaderView::sectionSize(logicalIndex);
         const QSize margin(0, 20);
         auto rect = metrics.boundingRect(QRect(0, 0, maxWidth, 5000), Qt::TextWordWrap | Qt::AlignCenter, headerText, 4);

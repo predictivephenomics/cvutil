@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: BatchProcessor.cpp
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -26,6 +27,8 @@ along with cvutil; see the file COPYING.  If not, see
 */
 
 #include "BatchProcessor.h"
+#include "helper_functions.h"
+#include <thread>
 
 using namespace std;
 using namespace cv;
@@ -154,30 +157,18 @@ void BatchProcessor::getfilelist(QString imgpath)
 {
     filelist.clear();
 
-    /*for (auto & p : experimental::filesystem::directory_iterator(imgpath))
-    {
-        string f = p.path().extension().string();
-        transform(f.begin(), f.end(), f.begin(), toupper);
-
-        if (f == ".PNG"  || f == ".JPG"  || f == ".BMP" || 
-            f == ".JPEG" || f == ".JPE"  || f == ".DIB" ||
-            f == ".JP2"  || f == ".TIFF" || f == ".TIF")
-        {
-            filelist.push_back(p.path().string());
-        }
-    }*/
-
     QDir dir(imgpath);
     QStringList images = dir.entryList(QStringList() 
         << "*.png" << "*.PNG" << "*.jpg" << "*.JPG" << "*.bmp" << "*.BMP" << "*.jpeg" << "*.JPEG" << "*.jpe" << "*.JPE"
         << "*.dib" << "*.DIB" << "*.jp2" << "*.JP2" << "*.tiff" << "*.TIFF" << "*.tif" << "*.TIF", QDir::Files);
+    natsort(images);
     for (auto image : images)
         filelist.push_back(imgpath + image);
 }
 
 void BatchProcessor::UpdateProgress(QString filename, int fileno)
 {
-    string basename = experimental::filesystem::path(filename.toStdString()).filename().string();
+    string basename = filesystem::path(filename.toStdString()).filename().string();
     currfile->setText(tr((basename + " (" +
         to_string(fileno + 1) + " of " + to_string(filelist.size()) + ")").c_str()));
     progress->setValue(fileno);
@@ -213,61 +204,6 @@ void BatchProcessor::workfinished()
         timeest->setText(e.toString("hh:mm:ss"));
 
         mode = CurrentMode::Stopped;
-    }
-}
-
-bool namecompare(string left, string right)
-{
-    bool pcont = false;
-    char *cleft = (char *)left.c_str();
-    char *cright = (char *)right.c_str();
-
-    while (1)
-    {
-        pcont = false;
-
-        if (strlen(cleft) == 0 || strlen(cright) == 0)
-            return (strlen(cleft) != 0);
-        
-        if (isdigit(*cleft) && isdigit(*cright))
-        {
-            char *rleft;
-            char *rright;
-            long long valA = strtoll(cleft, &rleft, 10);
-            long long valB = strtoll(cright, &rright, 10);
-
-            if (valA != valB)
-                return ((valA - valB) < 0);
-            else if (int(rright - cright) != int(rleft - cleft))
-                return (int(rright - cright) - int(rleft - cleft)) < 0;
-            else
-            {
-                cleft = rleft;
-                cright = rright;
-                continue;
-            }
-        }
-        if (isdigit(*cleft) || isdigit(*cright))
-            return (isdigit(*cleft) != 0);
-        
-        while (*cleft && *cright)
-        {
-            if (isdigit(*cleft) || isdigit(*cright))
-            {
-                pcont = true;
-                break;
-            }
-            if (tolower(*cleft) != tolower(*cright))
-                return (tolower(*cleft) - tolower(*cright)) < 0;
-            
-            cleft++;
-            cright++;
-        }
-
-        if (pcont)
-            continue;
-
-        return (*cleft == '\0');
     }
 }
 
@@ -359,9 +295,9 @@ void BatchProcessor::realstop()
     
     // Wait till thread stopped
     while (!workthread->isFinished())
-        Sleep(500);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    Sleep(500);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     // Stop the timer
     elapsed = 0;
@@ -387,9 +323,9 @@ void BatchProcessor::realpause()
     // Proceed to event handling only 
     // after thread is stopped.
     while (!workthread->isFinished())
-        Sleep(500);
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    Sleep(500);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     // Timer updating...
     // Pause is similar to stopping except that

@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: FeatureExtractorThread.h
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -36,7 +37,7 @@ along with cvutil; see the file COPYING.  If not, see
 #include <QtCore/QQueue>
 #include <QtCore/QThread>
 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <PluginInterfaces.h>
 
 class FeatureExtractorThread : public QThread
@@ -44,7 +45,7 @@ class FeatureExtractorThread : public QThread
     Q_OBJECT;
 
     // Location information
-    std::vector<QString> filelist;
+    QStringList filelist;
     int fileidx;
     QString saveloc;
 
@@ -54,7 +55,7 @@ class FeatureExtractorThread : public QThread
 public:
     FeatureExtractorThread(QObject *parent = 0);
     void reset();
-    void setfilelist(std::vector<QString> flist);
+    void setfilelist(QStringList flist);
     void setsavelocation(QString location);
     
     void setMainPlugin(IPlugin *p);

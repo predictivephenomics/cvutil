@@ -1,0 +1,29 @@
+Source: libcvutil
+Section: libs
+Priority: optional
+Maintainer: Anand Seethepalli <seethepallia@ornl.gov>
+Build-Depends: cmake, debhelper (>= 9)
+Standards-Version: 4.5.0
+
+Package: libcvutil@PROJECT_VERSION_MAJOR@
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Computer Vision UTILity Toolkit
+ cvutil is a C++ computer vision library that extends the 
+ functionality of OpenCV. The library contains some functions 
+ that are frequently used computer vision developers for 
+ convenience. The library uses multi-threading, vectorization 
+ routines available in Intel's AVX 2.0 to execute algorithms 
+ in the library. The optimizaion can be disabled optionally.
+
+Package: libcvutil-dev
+Section: libdevel
+Architecture: any
+Depends: libcvutil@PROJECT_VERSION_MAJOR@ (= ${binary:Version}), ${misc:Depends}
+Description: Development files for CVUtil
+ cvutil is a C++ computer vision library that extends the 
+ functionality of OpenCV. The library contains some functions 
+ that are frequently used computer vision developers for 
+ convenience. The library uses multi-threading, vectorization 
+ routines available in Intel's AVX 2.0 to execute algorithms 
+ in the library. The optimizaion can be disabled optionally.

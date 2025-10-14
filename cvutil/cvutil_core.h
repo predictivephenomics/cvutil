@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_core.h
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -73,6 +74,7 @@ namespace cvutil
 
     enum class LineSimplificationType { DouglasPeucker, NPoint };
 
+    CVUTILAPI std::vector<cv::Point> doughlas_peucker(std::vector<cv::Point> contour, double epsilon, bool isCircular);
     CVUTILAPI cv::Mat linesim(cv::Mat input, LineSimplificationType type = LineSimplificationType::DouglasPeucker, double epsilon = 1.0);
 
     // The following function differs from InputArray::getMat() 
@@ -88,7 +90,7 @@ namespace cvutil
 
     CVUTILAPI void ForEachFileInPath(std::string path, void(*func)(std::string filename));
 
-    CVUTILAPI void init(int argc, char *argv[], bool useOpt = true);
+    CVUTILAPI void init(int &argc, char *argv[], bool useOpt = true, bool useGUI = true);
     
     CVUTILAPI void drawText(cv::Mat &GeomLayer, const std::string & text, cv::Point org, cv::Scalar color, int rightmargin, int thickness);
 

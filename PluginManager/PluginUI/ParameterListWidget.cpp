@@ -1,11 +1,13 @@
-/*  Copyright (C) 2018-2020 Noble Research Institute, LLC
+/*
+Copyright (C) 2025, Oak Ridge National Laboratory
+Copyright (C) 2021, Anand Seethepalli and Larry York
+Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: ParameterListWidget.h
 
-Author: Anand Seethepalli (aseethepalli@noble.org)
-Assistant Professor: Larry York (lmyork@noble.org)
-Root Phenomics Lab
-Noble Research Institute, LLC
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -22,7 +24,6 @@ Noble General Public License for more details.
 You should have received a copy of the Noble General Public License
 along with cvutil.  If not, see <https://github.com/noble-research-institute/cvutil/blob/master/LICENSE>.
 */
-
 
 #include "ParameterListWidget.h"
 
@@ -565,7 +566,7 @@ WrappableCheckBox::WrappableCheckBox(const QString &text, QWidget *parent) : QWi
     lbl->setWordWrap(true);
 
     hl = new QHBoxLayout();
-    hl->setMargin(0);
+    hl->setContentsMargins(0, 0, 0, 0);
     hl->addWidget(cb);
     hl->addWidget(lbl);
 

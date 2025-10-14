@@ -1,0 +1,55 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(OpenCV REQUIRED)
+find_dependency(Qt6 REQUIRED COMPONENTS Core Widgets Charts Gui OpenGL)
+
+include("${CMAKE_CURRENT_LIST_DIR}/cvutilTargets.cmake")
+
+get_filename_component(cvutil_CONFIG_PATH "${CMAKE_CURRENT_LIST_DIR}" REALPATH)
+get_filename_component(cmake_INSTALL_PATH "${cvutil_CONFIG_PATH}/../../../.." REALPATH)
+
+# set(cvutil_INCLUDE_DIRS "${cmake_INSTALL_PATH}/include/cvutil")
+# set(cvutil_LIBRARIES cvutil::cvutil cvutil::RoiManager cvutil::PluginManager)
+
+# Define a helper function for copying runtime dependencies
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  function(copy_cvutil_runtime_dependencies target target_bin_dir)
+    # Add a post-build step to copy runtime dependencies
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND}
+      -E echo "Copying runtime dependencies for ${target} to ${target_bin_dir}"
+      COMMAND ${CMAKE_COMMAND}
+      -D CONFIG=$<CONFIG>
+      -D CMAKE_CURRENT_LIST_DIR="${CMAKE_CURRENT_LIST_DIR}"
+      -D TARGET_BIN_DIR="${target_bin_dir}"
+      -P "${CMAKE_CURRENT_LIST_DIR}/copy_runtime_dependencies.cmake"
+      COMMENT "Copying runtime dependencies for ${target}"
+    )
+  endfunction()
+
+  # Define a helper function for copying runtime dependencies
+  function(install_cvutil_runtime_dependencies target_bin_dir)
+    # Use install(CODE) to evaluate the generator expression during install
+    install(CODE "
+      include(\"${cvutil_CONFIG_PATH}/cvutil_runtime_dependencies-$<CONFIG>.cmake\")
+      message(STATUS \"Installing runtime dependencies to location ${target_bin_dir}...\")
+      
+      if(DEFINED CVUTIL_RUNTIME_DEPENDENCIES)
+        message(STATUS \"Runtime dependencies found.\")
+        foreach(dep IN LISTS CVUTIL_RUNTIME_DEPENDENCIES)
+          message(STATUS \"Installing \${dep}...\")
+          if(EXISTS \"\${dep}\")
+            message(STATUS \"Installing \${dep} to location ${target_bin_dir}...\")
+            # file(INSTALL \"\${dep}\" DESTINATION \"${target_bin_dir}\")
+            # Instead of file(INSTALL), use install(FILES ...) to register the file with the manifest.
+            install(FILES \"\${dep}\" DESTINATION \"${target_bin_dir}\")
+          else()
+            message(STATUS \"\${dep} does not exist.\")
+          endif()
+        endforeach()
+      endif()
+    ")
+  endfunction()
+endif()

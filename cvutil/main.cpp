@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: main.cpp
 
-Authors: 
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Authors:
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -48,6 +49,7 @@ using namespace cvutil;
 #include "cvutil_types.h"
 
 QApplication *GlobalValues::app = nullptr;
+QCoreApplication *GlobalValues::coreapp = nullptr;
 
 void extractfeatures(string filename)
 {
@@ -380,32 +382,32 @@ void processimage(string filename)
     //demo(filename);
 }
 
-int main(int argc, char *argv[])
-{
-    //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\new_setup_images\\round2\\I_9780444505156_1.png";
-    //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\b2.jpg";
-    //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\b.png";
-    //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\p1-CR2-1-1.jpg";
-    //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\p1-CR1-3.jpg";
-    //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\p1-SR-3.jpg";
-    //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\p5-PR-1.jpg";
+// int main(int argc, char *argv[])
+// {
+//     //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\new_setup_images\\round2\\I_9780444505156_1.png";
+//     //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\b2.jpg";
+//     //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\b.png";
+//     //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\p1-CR2-1-1.jpg";
+//     //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\p1-CR1-3.jpg";
+//     //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\p1-SR-3.jpg";
+//     //string filename = "C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\working2\\p5-PR-1.jpg";
 
-    init(argc, argv);
+//     init(argc, argv);
     
-    /*cout << getBuildInformation() << endl;
-    system("pause");*/
-    tic();
+//     /*cout << getBuildInformation() << endl;
+//     system("pause");*/
+//     tic();
 
-    //demo("C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\demo\\I_1014,5_3.png");
-    //demo("C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\demo\\I_1038,3_3.png");
+//     //demo("C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\demo\\I_1014,5_3.png");
+//     //demo("C:\\Users\\aseethepalli\\Documents\\projects\\AltRhizo Lite\\demo\\I_1038,3_3.png");
     
-    //makeplot();
+//     //makeplot();
 
-    //liveview();
-    ForEachFileInPath("R:/Root Phenomics Lab/Images/gantrytestthird/gantryphotoscantestjpeg/", processimage);
-    //toc("Total time taken");
+//     //liveview();
+//     ForEachFileInPath("R:/Root Phenomics Lab/Images/gantrytestthird/gantryphotoscantestjpeg/", processimage);
+//     //toc("Total time taken");
 
-    //system("pause");
-    return 0;
-}
+//     //system("pause");
+//     return 0;
+// }
 

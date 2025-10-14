@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: PluginManager.h
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -30,11 +31,13 @@ along with cvutil; see the file COPYING.  If not, see
 #ifndef PLUGINMANAGER_H
 #define PLUGINMANAGER_H
 
-//#include <cvutil.h>
+// To disable warnings from external headers.
+#pragma warning(push, 0)
 #include <QtWidgets/QtWidgets>
 #include <QtWidgets/qlayout.h>
+#pragma warning(pop)
 
-#ifdef WIN32
+#ifdef _WIN64
 #if (!defined PLAPI)
 #if (defined PLUGINMANAGER_SOURCE)
 #define PLAPI __declspec(dllexport)
@@ -42,12 +45,20 @@ along with cvutil; see the file COPYING.  If not, see
 #define PLAPI __declspec(dllimport)
 #endif
 #endif
+#elif defined(__linux__) || defined(__APPLE__)
+#if (!defined PLAPI)
+#if (defined PLUGINMANAGER_SOURCE)
+#define PLAPI __attribute__((visibility("default")))
+#else
+#define PLAPI
+#endif
+#endif
 #endif
 
 #include "PluginInterfaces.h"
 
 #if (defined PLUGINMANAGER_SOURCE)
-#include "PluginUI/ParameterListWidget.h"
+#include "../PluginUI/ParameterListWidget.h"
 #endif
 
 class PLAPI PluginManager

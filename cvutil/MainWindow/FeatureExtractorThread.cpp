@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: FeatureExtractorThread.cpp
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -46,7 +47,7 @@ void FeatureExtractorThread::reset()
     fileidx = 0;
 }
 
-void FeatureExtractorThread::setfilelist(vector<QString> flist)
+void FeatureExtractorThread::setfilelist(QStringList flist)
 {
     filelist = flist;
 }

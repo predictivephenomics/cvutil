@@ -1,12 +1,13 @@
 /*
+Copyright (C) 2025, Oak Ridge National Laboratory
 Copyright (C) 2021, Anand Seethepalli and Larry York
 Copyright (C) 2020, Courtesy of Noble Research Institute, LLC
 
 File: cvutil_matlab_interface.h
 
 Authors:
-Anand Seethepalli (anand.seethepalli@yahoo.co.in)
-Larry York (larry.york@gmail.com)
+Anand Seethepalli (seethepallia@ornl.gov)
+Larry York (yorklm@ornl.gov)
 
 This file is part of Computer Vision UTILity toolkit (cvutil)
 
@@ -66,10 +67,10 @@ namespace cvutil
     CVUTILAPI cv::Mat ceil(cv::Mat m);
 
     template<typename T>
-    std::vector<T> cvutil::unique(const cv::Mat& input, bool sort = true);
+    std::vector<T> unique(const cv::Mat& input, bool sort = true);
 
     template <typename T>
-    std::vector<T> cvutil::range(T _minv, T _maxv = INT_MIN, T step = T(1));
+    std::vector<T> range(T _minv, T _maxv = INT_MIN, T step = T(1));
 
     // TODO: Equivalent to MATLAB imhist.
     CVUTILAPI std::pair<cv::Mat, cv::Mat> imhist(cv::Mat m);
