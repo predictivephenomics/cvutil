@@ -44,12 +44,18 @@ target_include_directories(RoiManager
 target_link_libraries(RoiManager
     PRIVATE
         ${OpenCV_LIBS}
-        Qt6::Core
-        Qt6::Widgets
-        Qt6::Charts
-        Qt6::Gui
-        Qt6::OpenGL
 )
+
+if (Qt6_FOUND)
+    target_link_libraries(RoiManager
+        PRIVATE
+            Qt6::Core
+            Qt6::Widgets
+            Qt6::Charts
+            Qt6::Gui
+            Qt6::OpenGL
+    )
+endif()
 
 target_compile_definitions(RoiManager PRIVATE ROIMANAGER_SOURCE)
 

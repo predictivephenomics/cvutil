@@ -60,9 +60,11 @@ namespace cvutil
         static clock_t start;
         static clock_t stop;
         
+#ifdef BUILD_GUI
         // Qt specific
         static QCoreApplication *coreapp;
         static QApplication *app;
+#endif
 
         //static bool cswitch;
 

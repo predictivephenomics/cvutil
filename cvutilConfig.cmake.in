@@ -3,7 +3,7 @@
 include(CMakeFindDependencyMacro)
 
 find_dependency(OpenCV REQUIRED)
-find_dependency(Qt6 REQUIRED COMPONENTS Core Widgets Charts Gui OpenGL)
+find_package(Qt6 COMPONENTS Core Widgets Charts Gui OpenGL)
 
 include("${CMAKE_CURRENT_LIST_DIR}/cvutilTargets.cmake")
 

@@ -33,7 +33,9 @@ along with cvutil; see the file COPYING.  If not, see
 
 // To disable warnings from external headers.
 #pragma warning(push, 0)
+#ifdef BUILD_GUI
 #include <QtWidgets/QtWidgets>
+#endif
 #include <opencv2/opencv.hpp>
 
 #include <iostream>

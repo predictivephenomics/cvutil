@@ -32,9 +32,11 @@ along with cvutil; see the file COPYING.  If not, see
 #define FIGURE_H
 
 #include "cvutil.h"
+#ifdef BUILD_GUI
 #include <PluginInterfaces.h>
 #include <QtWidgets/QtWidgets>
 #include <QtCharts/QChartView>
+#endif
 
 using namespace cvutil;
 

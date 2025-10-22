@@ -14,19 +14,9 @@ set(SOURCES
     cvutil_bwskel.cpp
     cvutil_bwthin.cpp
     cvutil_core.cpp
-    cvutil_figure.cpp
     cvutil_linesim.cpp
     cvutil_videowriter.cpp
-    main.cpp
     cvutil_matlab_interface.cpp
-    MainWindow/BatchProcessor.cpp
-    MainWindow/FeatureExtractorThread.cpp
-    MainWindow/GraphicsScene.cpp
-    MainWindow/InteractiveExtractorThread.cpp
-    MainWindow/logger.cpp
-    MainWindow/MainWindow.cpp
-    MainWindow/helper_functions.cpp
-    MainWindow/MaterialStyle.cpp
     Profiler.cpp
     resources.qrc
 )
@@ -37,28 +27,48 @@ set(HEADERS
     cvutil_bwskel.h
     cvutil_bwthin.h
     cvutil_core.h
-    cvutil_figure.h
     cvutil_linesim.h
     cvutil_templates.h
     cvutil_matlab_interface.h
     cvutil_types.h
     cvutil_videowriter.h
-    demo.h
-    figure.h
-    main.h
-    MainWindow/BatchProcessor.h
-    MainWindow/FeatureExtractorThread.h
-    MainWindow/GraphicsScene.h
-    MainWindow/InteractiveExtractorThread.h
-    MainWindow/logger.h
-    MainWindow/MainWindow.h
-    MainWindow/helper_functions.h
-    MainWindow/MaterialStyle.h
     profiler.h
     resource.h
     stdproto.h
     video.h
 )
+
+if(Qt6_FOUND)
+    list(
+        APPEND SOURCES
+            main.cpp
+            cvutil_figure.cpp
+            MainWindow/BatchProcessor.cpp
+            MainWindow/FeatureExtractorThread.cpp
+            MainWindow/GraphicsScene.cpp
+            MainWindow/InteractiveExtractorThread.cpp
+            MainWindow/logger.cpp
+            MainWindow/MainWindow.cpp
+            MainWindow/helper_functions.cpp
+            MainWindow/MaterialStyle.cpp
+    )
+
+    list(
+        APPEND HEADERS
+          cvutil_figure.h
+          demo.h
+          figure.h
+          main.h
+          MainWindow/BatchProcessor.h
+          MainWindow/FeatureExtractorThread.h
+          MainWindow/GraphicsScene.h
+          MainWindow/InteractiveExtractorThread.h
+          MainWindow/logger.h
+          MainWindow/MainWindow.h
+          MainWindow/helper_functions.h
+          MainWindow/MaterialStyle.h
+      )
+endif()
 
 # Include the resource file only if it's WIN32 and MSVC
 if(WIN32)
@@ -110,14 +120,20 @@ target_include_directories(cvutil
 target_link_libraries(cvutil
     PRIVATE
         ${OpenCV_LIBS}
-        Qt6::Core
-        Qt6::Widgets
-        Qt6::Charts
-        Qt6::Gui
-        Qt6::OpenGL
-        PluginManager  # These are handled at the solution level, no need to add subdirectories here
-        RoiManager
 )
+
+if(Qt6_FOUND)
+    target_link_libraries(cvutil
+        PRIVATE
+            Qt6::Core
+            Qt6::Widgets
+            Qt6::Charts
+            Qt6::Gui
+            Qt6::OpenGL
+            PluginManager  # These are handled at the solution level, no need to add subdirectories here
+            RoiManager
+    )
+endif()
 
 target_compile_definitions(cvutil PRIVATE CVUTIL_SOURCE)
 

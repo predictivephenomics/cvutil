@@ -33,6 +33,10 @@ along with cvutil; see the file COPYING.  If not, see
 
 #include "cvutil.h"
 
+#ifndef BUILD_GUI
+typedef cv::String QString;
+#endif
+
 namespace cvutil
 {
     CVUTILAPI cv::Mat getSingleChannel(cv::Mat m);

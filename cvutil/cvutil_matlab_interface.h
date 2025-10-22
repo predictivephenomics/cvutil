@@ -32,7 +32,9 @@ along with cvutil; see the file COPYING.  If not, see
 #define MATLAB_INTERFACE_H
 
 #include "cvutil.h"
+#ifdef BUILD_GUI
 #include "figure.h"
+#endif
 
 #define bwconncomp   getConnectedComponents
 
