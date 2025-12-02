@@ -74,7 +74,7 @@ namespace cvutil
 
     enum class LineSimplificationType { DouglasPeucker, NPoint };
 
-    CVUTILAPI std::vector<cv::Point> doughlas_peucker(std::vector<cv::Point> contour, double epsilon, bool isCircular);
+    CVUTILAPI std::vector<cv::Point> doughlas_peucker(const std::vector<cv::Point>& contour, double epsilon, bool isCircular);
     CVUTILAPI cv::Mat linesim(cv::Mat input, LineSimplificationType type = LineSimplificationType::DouglasPeucker, double epsilon = 1.0);
 
     // The following function differs from InputArray::getMat() 

@@ -160,7 +160,7 @@ namespace cvutil
     // Output :
     // Returns a matrix of type CV_64FC1 with indices/subscripts and/or 
     // values of non-zero elements.
-    CVUTILAPI std::pair<cv::Mat, cv::Mat> find(cv::Mat x, FindType type = FindType::Indices, int n = -1, std::string direction = "first");
+    CVUTILAPI std::pair<cv::Mat, cv::Mat> find(cv::Mat x, FindType type = FindType::Indices, int n = -1, const std::string& direction = "first");
 
     CVUTILAPI cv::Mat bwdist(cv::Mat input);
     CVUTILAPI cv::Mat bwdist(cv::Mat input, cv::Mat& label, int labeltype = cv::DistanceTransformLabelTypes::DIST_LABEL_CCOMP);

@@ -106,7 +106,7 @@ namespace FloorCeilFunctions
                     _mm256_store_ps(&data[i], buffer);
                 }
                 else // Normal code for the last unaligned elements.
-                    for (k = 0; k < (counter_end - i + 1); k++)
+                    for (k = 0; k < (counter_end - i); k++)
                         data[i + k] = floor(data[i + k]);
             }
         }
@@ -152,7 +152,7 @@ namespace FloorCeilFunctions
                     _mm256_store_pd(&data[i], buffer);
                 }
                 else // Normal code for the last unaligned elements.
-                    for (k = 0; k < (counter_end - i + 1); k++)
+                    for (k = 0; k < (counter_end - i); k++)
                         data[i + k] = floor(data[i + k]);
             }
         }
@@ -198,7 +198,7 @@ namespace FloorCeilFunctions
                     _mm256_store_ps(&data[i], buffer);
                 }
                 else // Normal code for the last unaligned elements.
-                    for (k = 0; k < (counter_end - i + 1); k++)
+                    for (k = 0; k < (counter_end - i); k++)
                         data[i + k] = ceil(data[i + k]);
             }
         }
@@ -244,7 +244,7 @@ namespace FloorCeilFunctions
                     _mm256_store_pd(&data[i], buffer);
                 }
                 else // Normal code for the last unaligned elements.
-                    for (k = 0; k < (counter_end - i + 1); k++)
+                    for (k = 0; k < (counter_end - i); k++)
                         data[i + k] = ceil(data[i + k]);
             }
         }
@@ -714,7 +714,7 @@ namespace FindHelper
     }
 }
 
-pair<Mat, Mat> cvutil::find(Mat input, FindType type, int n, string direction)
+pair<Mat, Mat> cvutil::find(Mat input, FindType type, int n, const string& direction)
 {
     if (input.empty())
         return pair<Mat, Mat> (Mat(), Mat());
@@ -779,7 +779,7 @@ pair<Mat, Mat> cvutil::find(Mat input, FindType type, int n, string direction)
     }
 
     // Initialize the result matrix.
-    Mat val; 
+    Mat val{}; 
     Mat indsub = Mat::zeros(N, nOutputCols, CV_32SC1);
     int *indsubptr = indsub.ptr<int>();
     

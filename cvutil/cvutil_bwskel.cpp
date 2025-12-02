@@ -1304,25 +1304,30 @@ void bwskel_helper::rectify_components(Mat& skeleton, Mat dist, Mat inputc)
     int pt = 0;
 
     location_base* ploc = new location_base(&skeleton);
-    ploc->setpt(ncols);
+    ploc->setpt(2 * ncols);
 
     // Operate on first row only and correct the components
-    while (ploc->getpt() < (2 * ncols))
+    // The first 2 rows are padded with zeros so we start on 3rd row.
+    while (ploc->getpt() < (3 * ncols))
     {
-        while (ploc->imgval() == 0 && ploc->getpt() < (2 * ncols))
+        while (ploc->imgval() == 0 && ploc->getpt() < (3 * ncols))
             ploc = ploc->right();
 
         switch (ploc->getimageneighborsum())
         {
         case 0:
         case 1:
-            if (dptr[ploc->getpt() + 1] > dptr[ploc->getpt()] && iptr[ploc->getpt()] > 0 && ploc->getpt() < (2 * ncols) && ploc->getimageneighborsum() < 2 && ploc->getimageconnectivity() < 2)
+            if (dptr[ploc->getpt() + 1] > dptr[ploc->getpt()] && 
+                iptr[ploc->getpt()] > 0 && ploc->getpt() < (3 * ncols) && 
+                ploc->getimageneighborsum() < 2 && ploc->getimageconnectivity() < 2)
             {
                 do
                 {
                     ploc->unsetimagepixel();
                     ploc = ploc->right();
-                } while (dptr[ploc->getpt() + 1] > dptr[ploc->getpt()] && iptr[ploc->getpt()] > 0 && ploc->getpt() < (2 * ncols) && ploc->getimageneighborsum() < 2 && ploc->getimageconnectivity() < 2);
+                } while (dptr[ploc->getpt() + 1] > dptr[ploc->getpt()] && 
+                         iptr[ploc->getpt()] > 0 && ploc->getpt() < (3 * ncols) && 
+                         ploc->getimageneighborsum() < 2 && ploc->getimageconnectivity() < 2);
             }
             else
                 ploc = ploc->right();
@@ -1333,11 +1338,11 @@ void bwskel_helper::rectify_components(Mat& skeleton, Mat dist, Mat inputc)
         }
     }
 
-    while (ploc->getpt() >= ncols)
+    while (ploc->getpt() >= (2 * ncols))
     {
         pt = ploc->getpt();
 
-        while (ploc->imgval() == 0 && ploc->getpt() >= ncols)
+        while (ploc->imgval() == 0 && ploc->getpt() >= (2 * ncols))
             ploc = ploc->left();
 
         pt = ploc->getimageneighborsum();
@@ -1345,13 +1350,17 @@ void bwskel_helper::rectify_components(Mat& skeleton, Mat dist, Mat inputc)
         {
         case 0:
         case 1:
-            if (dptr[ploc->getpt() - 1] > dptr[ploc->getpt()] && iptr[ploc->getpt()] > 0 && ploc->getpt() >= ncols && ploc->getimageneighborsum() <= 2 && ploc->getimageconnectivity() < 2)
+            if (dptr[ploc->getpt() - 1] > dptr[ploc->getpt()] && 
+                iptr[ploc->getpt()] > 0 && ploc->getpt() >= (2 * ncols) && 
+                ploc->getimageneighborsum() <= 2 && ploc->getimageconnectivity() < 2)
             {
                 do
                 {
                     ploc->unsetimagepixel();
                     ploc = ploc->left();
-                } while (dptr[ploc->getpt() - 1] > dptr[ploc->getpt()] && iptr[ploc->getpt()] > 0 && ploc->getpt() >= ncols && ploc->getimageneighborsum() <= 2 && ploc->getimageconnectivity() < 2);
+                } while (dptr[ploc->getpt() - 1] > dptr[ploc->getpt()] && 
+                         iptr[ploc->getpt()] > 0 && ploc->getpt() >= (2 * ncols) && 
+                         ploc->getimageneighborsum() <= 2 && ploc->getimageconnectivity() < 2);
             }
             else
                 ploc = ploc->left();
