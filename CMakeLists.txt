@@ -143,6 +143,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
                   NO_DEFAULT_PATH)
         if(ASAN_DLL)
             install(FILES ${ASAN_DLL} CONFIGURATIONS Debug DESTINATION bin)
+        else()
+            message(WARNING "AddressSanitizer DLL not found. Debug builds may fail to run.")
         endif()
     endif()
     
