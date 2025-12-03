@@ -51,6 +51,7 @@ target_include_directories(PluginManager
 # Link libraries (PluginManager depends on Qt)
 target_link_libraries(PluginManager
     PRIVATE
+        cvutil_compiler_flags
         Qt6::Core
         Qt6::Widgets
         Qt6::Charts
@@ -65,29 +66,29 @@ set(PUBLIC_HEADERS
     include/PluginManager.h
 )
 
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/bin)
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/include)
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/lib)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/bin)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/include)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/lib)
 
-# Set the output directories for the built targets
-set_target_properties(cvutil PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/bin/
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/bin/
+# # Set the output directories for the built targets
+# set_target_properties(cvutil PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/bin/
+#     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/bin/
     
-    LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
-    LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
+#     LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
+#     LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
     
-    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
-    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
-)
+#     ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
+#     ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
+# )
 
-# Post-build commands (copy the library to the correct directories)
-add_custom_command(TARGET PluginManager POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/PluginInterfaces.h ${CMAKE_BINARY_DIR}/library/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/PluginManager.h ${CMAKE_BINARY_DIR}/library/include/
-)
+# # Post-build commands (copy the library to the correct directories)
+# add_custom_command(TARGET PluginManager POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/include/PluginInterfaces.h ${CMAKE_BINARY_DIR}/library/include/
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/include/PluginManager.h ${CMAKE_BINARY_DIR}/library/include/
+# )
 
 # # Install the PluginManager library
 # install(TARGETS PluginManager
@@ -154,17 +155,17 @@ if (MSVC)
     install(FILES $<TARGET_PDB_FILE:PluginManager> CONFIGURATIONS Debug DESTINATION bin COMPONENT development)
 endif()
 
-# For the PluginManager target
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_custom_command(TARGET PluginManager POST_BUILD
-    COMMAND ${CMAKE_COMMAND}
-        -D TARGET_FILE=$<TARGET_FILE:PluginManager>
-        -D INSTALL_BIN=${CMAKE_INSTALL_PREFIX}/$<IF:$<BOOL:${WIN32}>,bin,lib/cvutil>
-        -D SEARCH_DIRS=${DEP_PATH}
-        -D BUILD_CONFIG=$<CONFIG>
-        -D BINARY_DIR=${CMAKE_BINARY_DIR}
-        -P "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/find_runtime_deps.cmake"
-    COMMENT "Copying runtime dependencies for PluginManager"
-    )
-endif()
+# # For the PluginManager target
+# if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+#     add_custom_command(TARGET PluginManager POST_BUILD
+#     COMMAND ${CMAKE_COMMAND}
+#         -D TARGET_FILE=$<TARGET_FILE:PluginManager>
+#         -D INSTALL_BIN=${CMAKE_INSTALL_PREFIX}/$<IF:$<BOOL:${WIN32}>,bin,lib/cvutil>
+#         -D SEARCH_DIRS=${DEP_PATH}
+#         -D BUILD_CONFIG=$<CONFIG>
+#         -D BINARY_DIR=${CMAKE_BINARY_DIR}
+#         -P "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/find_runtime_deps.cmake"
+#     COMMENT "Copying runtime dependencies for PluginManager"
+#     )
+# endif()
 

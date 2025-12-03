@@ -35,7 +35,7 @@ along with cvutil; see the file COPYING.  If not, see
 
 namespace linesim_helper
 {
-    std::vector<cv::Point> doughlas_peucker(std::vector<cv::Point> contour, double epsilon, bool isCircular);
+    std::vector<cv::Point> doughlas_peucker(const std::vector<cv::Point>& contour, double epsilon, bool isCircular);
 
     cv::Mat linesim_st(cv::Mat inputc, double epsilon);
     //Mat linesim_mt_pthread(Mat inputc, Mat subs, Mat inds);

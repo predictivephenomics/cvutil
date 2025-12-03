@@ -247,11 +247,11 @@ Mat bwthin_helper::bwthin_st(Mat inputc, Mat subs, Mat inds)
                 if (idx != ULONG_MAX)
                 {
                     int idxval = idx;
-                    if ((INDEX(idxval) + 1) == INDEX(idxval + 1))
+                    if ((idxval < (nsubrows - 1)) && (INDEX(idxval) + 1) == INDEX(idxval + 1))
                         __X1 = INDEX_ACCESS(idxval + 1);
                     else
                         __X1 = 0;
-                    if ((INDEX(idxval) - 1) == INDEX(idxval - 1))
+                    if ((idxval > 0) && (INDEX(idxval) - 1) == INDEX(idxval - 1))
                         __X3 = INDEX_ACCESS(idxval - 1);
                     else
                         __X3 = 0;
@@ -262,7 +262,7 @@ Mat bwthin_helper::bwthin_st(Mat inputc, Mat subs, Mat inds)
                     SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
                 }
 
-                if ((INDEX(i) - 1) == INDEX(i - 1))
+                if ((i > 0) && (INDEX(i) - 1) == INDEX(i - 1))
                     __X4 = INDEX_ACCESS(i - 1);
                 else
                     __X4 = 0;
@@ -291,11 +291,11 @@ Mat bwthin_helper::bwthin_st(Mat inputc, Mat subs, Mat inds)
                 if (idx != ULONG_MAX)
                 {
                     int idxval = idx;
-                    if ((INDEX(idxval) + 1) == INDEX(idxval + 1))
+                    if ((idxval < (nsubrows - 1)) && (INDEX(idxval) + 1) == INDEX(idxval + 1))
                         __X1 = INDEX_ACCESS(idxval + 1);
                     else
                         __X1 = 0;
-                    if ((INDEX(idxval) - 1) == INDEX(idxval - 1))
+                    if ((idxval > 0) && (INDEX(idxval) - 1) == INDEX(idxval - 1))
                         __X3 = INDEX_ACCESS(idxval - 1);
                     else
                         __X3 = 0;
@@ -306,7 +306,7 @@ Mat bwthin_helper::bwthin_st(Mat inputc, Mat subs, Mat inds)
                     SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
                 }
 
-                if ((INDEX(i) - 1) == INDEX(i - 1))
+                if ((i > 0) && (INDEX(i) - 1) == INDEX(i - 1))
                     __X4 = INDEX_ACCESS(i - 1);
                 else
                     __X4 = 0;
@@ -368,11 +368,11 @@ void bwthin_thread_apply_lut(void *_pdata)
                 if (idx != ULONG_MAX)
                 {
                     int idxval = idx;
-                    if ((INDEX(idxval) + 1) == INDEX(idxval + 1))
+                    if ((idxval < (nsubrows - 1)) && (INDEX(idxval) + 1) == INDEX(idxval + 1))
                         __X1 = INDEX_ACCESS(idxval + 1);
                     else
                         SPARSE_ACCESS(S_ROW - 1, S_COL + 1, 0, __X1);
-                    if ((INDEX(idxval) - 1) == INDEX(idxval - 1))
+                    if ((idxval > 0) && (INDEX(idxval) - 1) == INDEX(idxval - 1))
                         __X3 = INDEX_ACCESS(idxval - 1);
                     else
                         SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
@@ -383,7 +383,7 @@ void bwthin_thread_apply_lut(void *_pdata)
                     SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
                 }
 
-                if ((INDEX(i) - 1) == INDEX(i - 1))
+                if ((i > 0) && (INDEX(i) - 1) == INDEX(i - 1))
                     __X4 = INDEX_ACCESS(i - 1);
                 else
                     SPARSE_ACCESS(S_ROW, S_COL - 1, 0, __X4);
@@ -403,7 +403,7 @@ void bwthin_thread_apply_lut(void *_pdata)
         {
             if (S_CURR == 1)
             {
-                if ((INDEX(i) + 1) == INDEX(i + 1))
+                if ((i < (nsubrows - 1)) && (INDEX(i) + 1) == INDEX(i + 1))
                     __X0 = INDEX_ACCESS(i + 1);
                 else
                     SPARSE_ACCESS(S_ROW, S_COL + 1, 1, __X0);
@@ -411,11 +411,11 @@ void bwthin_thread_apply_lut(void *_pdata)
                 if (idx != ULONG_MAX)
                 {
                     int idxval = idx;
-                    if ((INDEX(idxval) + 1) == INDEX(idxval + 1))
+                    if ((idxval < (nsubrows - 1)) && (INDEX(idxval) + 1) == INDEX(idxval + 1))
                         __X1 = INDEX_ACCESS(idxval + 1);
                     else
                         SPARSE_ACCESS(S_ROW - 1, S_COL + 1, 0, __X1);
-                    if ((INDEX(idxval) - 1) == INDEX(idxval - 1))
+                    if ((idxval > 0) && (INDEX(idxval) - 1) == INDEX(idxval - 1))
                         __X3 = INDEX_ACCESS(idxval - 1);
                     else
                         SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
@@ -426,7 +426,7 @@ void bwthin_thread_apply_lut(void *_pdata)
                     SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
                 }
                 
-                if ((INDEX(i) - 1) == INDEX(i - 1))
+                if ((i > 0) && (INDEX(i) - 1) == INDEX(i - 1))
                     __X4 = INDEX_ACCESS(i - 1);
                 else
                     SPARSE_ACCESS(S_ROW, S_COL - 1, 0, __X4);
@@ -434,11 +434,11 @@ void bwthin_thread_apply_lut(void *_pdata)
                 if (idx != ULONG_MAX)
                 {
                     int idxval = idx;
-                    if ((INDEX(idxval) + 1) == INDEX(idxval + 1))
+                    if ((idxval < (nsubrows - 1)) && (INDEX(idxval) + 1) == INDEX(idxval + 1))
                         __X7 = INDEX_ACCESS(idxval + 1);
                     else
                         SPARSE_ACCESS(S_ROW + 1, S_COL + 1, 1, __X7);
-                    if ((INDEX(idxval) - 1) == INDEX(idxval - 1))
+                    if ((idxval > 0) && (INDEX(idxval) - 1) == INDEX(idxval - 1))
                         __X5 = INDEX_ACCESS(idxval - 1);
                     else
                         SPARSE_ACCESS(S_ROW + 1, S_COL - 1, 1, __X5);
@@ -468,11 +468,11 @@ void bwthin_thread_apply_lut(void *_pdata)
                 if (idx != ULONG_MAX)
                 {
                     int idxval = idx;
-                    if ((INDEX(idxval) + 1) == INDEX(idxval + 1))
+                    if ((idxval < (nsubrows - 1)) && (INDEX(idxval) + 1) == INDEX(idxval + 1))
                         __X1 = INDEX_ACCESS(idxval + 1);
                     else
                         SPARSE_ACCESS(S_ROW - 1, S_COL + 1, 0, __X1);
-                    if ((INDEX(idxval) - 1) == INDEX(idxval - 1))
+                    if ((idxval > 0) && (INDEX(idxval) - 1) == INDEX(idxval - 1))
                         __X3 = INDEX_ACCESS(idxval - 1);
                     else
                         SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
@@ -483,7 +483,7 @@ void bwthin_thread_apply_lut(void *_pdata)
                     SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
                 }
 
-                if ((INDEX(i) - 1) == INDEX(i - 1))
+                if ((i > 0) && (INDEX(i) - 1) == INDEX(i - 1))
                     __X4 = INDEX_ACCESS(i - 1);
                 else
                     SPARSE_ACCESS(S_ROW, S_COL - 1, 0, __X4);
@@ -503,7 +503,7 @@ void bwthin_thread_apply_lut(void *_pdata)
         {
             if (S_CURR == 1)
             {
-                if ((INDEX(i) + 1) == INDEX(i + 1))
+                if ((i < (nsubrows - 1)) && (INDEX(i) + 1) == INDEX(i + 1))
                     __X0 = INDEX_ACCESS(i + 1);
                 else
                     SPARSE_ACCESS(S_ROW, S_COL + 1, 1, __X0);
@@ -511,11 +511,11 @@ void bwthin_thread_apply_lut(void *_pdata)
                 if (idx != ULONG_MAX)
                 {
                     int idxval = idx;
-                    if ((INDEX(idxval) + 1) == INDEX(idxval + 1))
+                    if ((idxval < (nsubrows - 1)) && (INDEX(idxval) + 1) == INDEX(idxval + 1))
                         __X1 = INDEX_ACCESS(idxval + 1);
                     else
                         SPARSE_ACCESS(S_ROW - 1, S_COL + 1, 0, __X1);
-                    if ((INDEX(idxval) - 1) == INDEX(idxval - 1))
+                    if ((idxval > 0) && (INDEX(idxval) - 1) == INDEX(idxval - 1))
                         __X3 = INDEX_ACCESS(idxval - 1);
                     else
                         SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
@@ -526,7 +526,7 @@ void bwthin_thread_apply_lut(void *_pdata)
                     SPARSE_ACCESS(S_ROW - 1, S_COL - 1, 0, __X3);
                 }
 
-                if ((INDEX(i) - 1) == INDEX(i - 1))
+                if ((i > 0) && (INDEX(i) - 1) == INDEX(i - 1))
                     __X4 = INDEX_ACCESS(i - 1);
                 else
                     SPARSE_ACCESS(S_ROW, S_COL - 1, 0, __X4);
@@ -534,11 +534,11 @@ void bwthin_thread_apply_lut(void *_pdata)
                 if (idx != ULONG_MAX)
                 {
                     int idxval = idx;
-                    if ((INDEX(idxval) + 1) == INDEX(idxval + 1))
+                    if ((idxval < (nsubrows - 1)) && (INDEX(idxval) + 1) == INDEX(idxval + 1))
                         __X7 = INDEX_ACCESS(idxval + 1);
                     else
                         SPARSE_ACCESS(S_ROW + 1, S_COL + 1, 1, __X7);
-                    if ((INDEX(idxval) - 1) == INDEX(idxval - 1))
+                    if ((idxval > 0) && (INDEX(idxval) - 1) == INDEX(idxval - 1))
                         __X5 = INDEX_ACCESS(idxval - 1);
                     else
                         SPARSE_ACCESS(S_ROW + 1, S_COL - 1, 1, __X5);

@@ -511,11 +511,11 @@ Mat cvutil::bwthin(Mat input)
     
     // Add 1-pixel width of black pixels as boundary to the input image to avoid
     // boundary errors.
-    hconcat(Mat::zeros(input.rows, 1, input.type()), inputc, inputc);
-    hconcat(inputc, Mat::zeros(input.rows, 1, input.type()), inputc);
+    hconcat(Mat::zeros(inputc.rows, 1, inputc.type()), inputc, inputc);
+    hconcat(inputc, Mat::zeros(inputc.rows, 1, inputc.type()), inputc);
 
-    vconcat(Mat::zeros(1, inputc.cols, input.type()), inputc, inputc);
-    vconcat(inputc, Mat::zeros(1, inputc.cols, input.type()), inputc);
+    vconcat(Mat::zeros(1, inputc.cols, inputc.type()), inputc, inputc);
+    vconcat(inputc, Mat::zeros(1, inputc.cols, inputc.type()), inputc);
 
     pair<Mat, Mat> psubs = find(inputc == 255, FindType::Subscripts);
     Mat subs = psubs.first;
@@ -575,7 +575,7 @@ Mat cvutil::bwskel(Mat input, Mat distance)
     return out.rowRange(2, out.rows - 2).colRange(2, out.cols - 2).clone();
 }
 
-std::vector<cv::Point> cvutil::doughlas_peucker(std::vector<cv::Point> contour, double epsilon, bool isCircular)
+std::vector<cv::Point> cvutil::doughlas_peucker(const std::vector<cv::Point>& contour, double epsilon, bool isCircular)
 {
     return linesim_helper::doughlas_peucker(contour, epsilon, isCircular);
 }

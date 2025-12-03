@@ -44,12 +44,13 @@ along with cvutil; see the file COPYING.  If not, see
 using namespace std;
 using namespace cv;
 
-vector<Point> linesim_helper::doughlas_peucker(vector<Point> contour, double epsilon, bool isCircular)
+vector<Point> linesim_helper::doughlas_peucker(const vector<Point>& contour, double epsilon, bool isCircular)
 {
     double acoef, bcoef, ccoef, invdist, maxdist, maxadist = 0, adist, dist, distlongest = -1;
     int startidx = -1, stopidx = -1, maxidx = -1, updatept = 0, j;
     vector<int> stopstack;
     vector<Point> pixelstosave;
+    vector<Point> localContour;  // Local copy for modification
     Point start;
     
     if (contour.size() <= 1)
@@ -77,32 +78,39 @@ vector<Point> linesim_helper::doughlas_peucker(vector<Point> contour, double eps
     // If the contour is circular (aka. closed contour), 
     // add the starting point to the end.
     if (isCircular)
-        contour.push_back(contour[0]);
+    {
+        localContour = contour;  // Make a copy
+        localContour.push_back(localContour[0]);
+    }
+    else
+    {
+        localContour = contour;  // Use the original
+    }
 
-    stopidx = static_cast<int>(contour.size()) - 1;
+    stopidx = static_cast<int>(localContour.size()) - 1;
     updatept = 0;
     distlongest = 0;
 
     stopstack.reserve(500);
-    pixelstosave.reserve(contour.size() + 1);
-    pixelstosave.push_back(contour[startidx]);
+    pixelstosave.reserve(localContour.size() + 1);
+    pixelstosave.push_back(localContour[startidx]);
 
     while (startidx < stopidx)
     {
         if (updatept == 0)
         {
-            start = contour[startidx];
+            start = localContour[startidx];
             stopstack.push_back(stopidx);
         }
         else
-            start = contour[startidx];
+            start = localContour[startidx];
 
-        if (startidx == 0 && stopidx == contour.size() - 1)
+        if (startidx == 0 && stopidx == localContour.size() - 1)
         {
             for (j = (startidx + 1), maxadist = 0, maxidx = -1; j < stopidx; j++)
             {
-                dist = ((contour[startidx].x - contour[j].x) * (contour[startidx].x - contour[j].x)) +
-                    ((contour[startidx].y - contour[j].y) * (contour[startidx].y - contour[j].y));
+                dist = ((localContour[startidx].x - localContour[j].x) * (localContour[startidx].x - localContour[j].x)) +
+                    ((localContour[startidx].y - localContour[j].y) * (localContour[startidx].y - localContour[j].y));
                 adist = fabs(dist);
 
                 if (adist > maxadist)
@@ -113,7 +121,7 @@ vector<Point> linesim_helper::doughlas_peucker(vector<Point> contour, double eps
                 }
             }
 
-            //distlongest = (acoef * contour[maxidx].x - bcoef * contour[maxidx].y + ccoef) * invdist;
+            //distlongest = (acoef * localContour[maxidx].x - bcoef * localContour[maxidx].y + ccoef) * invdist;
             //maxadist = fabs(dist);
             //distlongest *= -1;
             /*maxadist = mloc.first;
@@ -121,10 +129,10 @@ vector<Point> linesim_helper::doughlas_peucker(vector<Point> contour, double eps
         }
         else
         {
-            acoef = contour[stopidx].y - start.y;
-            bcoef = contour[stopidx].x - start.x;
+            acoef = localContour[stopidx].y - start.y;
+            bcoef = localContour[stopidx].x - start.x;
             // We do not need ccoef as we are merely comparing the distances. 
-            ccoef = contour[stopidx].x * start.y - contour[stopidx].y * start.x;
+            ccoef = localContour[stopidx].x * start.y - localContour[stopidx].y * start.x;
 
             // We probably do not need to use invdist to compute the exact distance
             // because we just want to know the index of the point with maximum distance.
@@ -137,7 +145,7 @@ vector<Point> linesim_helper::doughlas_peucker(vector<Point> contour, double eps
             
             for (j = (startidx + 1), maxadist = 0, maxidx = -1; j < stopidx; j++)
             {
-                dist = (acoef * double(contour[j].x) - bcoef * double(contour[j].y) + ccoef);
+                dist = (acoef * double(localContour[j].x) - bcoef * double(localContour[j].y) + ccoef);
                 adist = fabs(dist);
                 
                 if (adist > maxadist)
@@ -156,10 +164,10 @@ vector<Point> linesim_helper::doughlas_peucker(vector<Point> contour, double eps
         else
         {
             // Add the stop pixels to save list.
-            //if (startidx == 0 && stopidx == contour.size() - 1)
-            pixelstosave.push_back(contour[stopidx]);
+            //if (startidx == 0 && stopidx == localContour.size() - 1)
+            pixelstosave.push_back(localContour[stopidx]);
             //else
-            //  pixelstosave.push_back(contour[stopidx]);
+            //  pixelstosave.push_back(localContour[stopidx]);
 
             // To update stopidx and update startidx.
             startidx = stopidx;

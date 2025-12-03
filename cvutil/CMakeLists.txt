@@ -109,6 +109,7 @@ target_include_directories(cvutil
 # Link libraries (cvutil depends on PluginManager and RoiManager)
 target_link_libraries(cvutil
     PRIVATE
+        cvutil_compiler_flags
         ${OpenCV_LIBS}
         Qt6::Core
         Qt6::Widgets
@@ -132,41 +133,41 @@ set(PUBLIC_HEADERS
     video.h
 )
 
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/bin)
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/include)
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/lib)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/bin)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/include)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/lib)
 
-# Set the output directories for the shared library (bin for runtime, lib for static and import libraries)
-set_target_properties(cvutil PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/bin/
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/bin/
+# # Set the output directories for the shared library (bin for runtime, lib for static and import libraries)
+# set_target_properties(cvutil PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/bin/
+#     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/bin/
     
-    LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
-    LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
+#     LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
+#     LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
     
-    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
-    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
-)
+#     ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
+#     ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
+# )
 
-# Post-build events headers to appropriate directory
-add_custom_command(TARGET cvutil POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/cvutil.h ${CMAKE_BINARY_DIR}/library/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/cvutil_core.h ${CMAKE_BINARY_DIR}/library/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/cvutil_matlab_interface.h ${CMAKE_BINARY_DIR}/library/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/cvutil_templates.h ${CMAKE_BINARY_DIR}/library/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/figure.h ${CMAKE_BINARY_DIR}/library/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/profiler.h ${CMAKE_BINARY_DIR}/library/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/stdproto.h ${CMAKE_BINARY_DIR}/library/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/video.h ${CMAKE_BINARY_DIR}/library/include/
-)
+# # Post-build events headers to appropriate directory
+# add_custom_command(TARGET cvutil POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/cvutil.h ${CMAKE_BINARY_DIR}/library/include/
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/cvutil_core.h ${CMAKE_BINARY_DIR}/library/include/
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/cvutil_matlab_interface.h ${CMAKE_BINARY_DIR}/library/include/
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/cvutil_templates.h ${CMAKE_BINARY_DIR}/library/include/
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/figure.h ${CMAKE_BINARY_DIR}/library/include/
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/profiler.h ${CMAKE_BINARY_DIR}/library/include/
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/stdproto.h ${CMAKE_BINARY_DIR}/library/include/
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/video.h ${CMAKE_BINARY_DIR}/library/include/
+# )
 
 # # Install the cvutil library
 # install(TARGETS cvutil
@@ -230,11 +231,13 @@ endif()
 
 # For the cvutil target
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    # Build search directories list for runtime dependency detection
+    set(RUNTIME_SEARCH_DIRS ${DEP_PATH})
     add_custom_command(TARGET cvutil POST_BUILD
     COMMAND ${CMAKE_COMMAND}
         -D TARGET_FILE=$<TARGET_FILE:cvutil>
         -D INSTALL_BIN=${CMAKE_INSTALL_PREFIX}/$<IF:$<BOOL:${WIN32}>,bin,lib/cvutil>
-        -D SEARCH_DIRS=${DEP_PATH}
+        -D SEARCH_DIRS="${RUNTIME_SEARCH_DIRS}"
         -D BUILD_CONFIG=$<CONFIG>
         -D BINARY_DIR=${CMAKE_BINARY_DIR}
         -P "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/find_runtime_deps.cmake"
