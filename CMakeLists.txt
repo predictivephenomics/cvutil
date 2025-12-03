@@ -118,7 +118,7 @@ if(USE_MIMALLOC)
         GIT_TAG v2.2.4
         PREFIX ${MIMALLOC_PREFIX}
         CMAKE_ARGS
-            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+            -DCMAKE_BUILD_TYPE=Release
             -DMI_BUILD_SHARED=ON
             -DMI_BUILD_STATIC=OFF
             -DMI_BUILD_TESTS=OFF
