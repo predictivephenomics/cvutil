@@ -132,12 +132,15 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     
     if(MSVC)
         # Configurable path for MSVC LLVM bin directory
-        set(MSVC_LLVM_BIN_PATH "" CACHE PATH "Path to MSVC LLVM bin directory (e.g., C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin)")
+        set(MSVC_LLVM_BIN_PATH "" CACHE PATH "Path to MSVC LLVM bin directory containing clang_rt.asan_dynamic-x86_64.dll")
         
         # Get the compiler directory and construct paths dynamically
         get_filename_component(COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
         
         # Build list of search paths for ASAN DLL
+        # Relative paths navigate from compiler location to LLVM bin directory:
+        # - ../../bin: For clang-cl in VC/Tools/Llvm/x64/bin relative to MSVC compiler
+        # - ../../../bin: For alternative LLVM layouts
         set(ASAN_SEARCH_PATHS
             "${COMPILER_DIR}"
             "${COMPILER_DIR}/../../../bin"
