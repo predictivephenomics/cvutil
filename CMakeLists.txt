@@ -131,15 +131,42 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     endforeach()
     
     if(MSVC)
+        # Configurable path for MSVC LLVM bin directory
+        set(MSVC_LLVM_BIN_PATH "" CACHE PATH "Path to MSVC LLVM bin directory containing clang_rt.asan_dynamic-x86_64.dll")
+        
         # Get the compiler directory and construct paths dynamically
         get_filename_component(COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
         
+        # Build list of search paths for ASAN DLL
+        # Relative paths navigate from compiler location to LLVM bin directory:
+        # - ../../bin: For clang-cl in VC/Tools/Llvm/x64/bin relative to MSVC compiler
+        # - ../../../bin: For alternative LLVM layouts
+        set(ASAN_SEARCH_PATHS
+            "${COMPILER_DIR}"
+            "${COMPILER_DIR}/../../../bin"
+            "${COMPILER_DIR}/../../bin"
+        )
+        
+        # Add user-specified path if provided
+        if(MSVC_LLVM_BIN_PATH)
+            list(APPEND ASAN_SEARCH_PATHS "${MSVC_LLVM_BIN_PATH}")
+        endif()
+        
+        # Add paths based on VSINSTALLDIR environment variable if available
+        if(DEFINED ENV{VSINSTALLDIR})
+            list(APPEND ASAN_SEARCH_PATHS "$ENV{VSINSTALLDIR}/VC/Tools/Llvm/x64/bin")
+        endif()
+        
+        # Add common VS installation paths as fallback (supporting different editions)
+        list(APPEND ASAN_SEARCH_PATHS
+            "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin"
+            "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin"
+            "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin"
+        )
+        
         # Find and install ASAN DLL for Debug builds
         find_file(ASAN_DLL "clang_rt.asan_dynamic-x86_64.dll" 
-                  PATHS "${COMPILER_DIR}"
-                        "${COMPILER_DIR}/../../../bin"
-                        "${COMPILER_DIR}/../../bin"
-                        "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin"
+                  PATHS ${ASAN_SEARCH_PATHS}
                   NO_DEFAULT_PATH)
         if(ASAN_DLL)
             install(FILES ${ASAN_DLL} CONFIGURATIONS Debug DESTINATION bin)
