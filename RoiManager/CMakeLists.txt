@@ -52,6 +52,13 @@ target_link_libraries(RoiManager
         Qt6::OpenGL
 )
 
+# Link mimalloc for Release builds only
+if(USE_MIMALLOC)
+    target_link_libraries(RoiManager PRIVATE $<$<CONFIG:Release>:mimalloc>)
+    target_link_options(RoiManager PRIVATE $<$<CONFIG:Release>:/INCLUDE:mi_version>)
+    message(STATUS "RoiManager will use mimalloc shared library for Release configuration")
+endif()
+
 target_compile_definitions(RoiManager PRIVATE ROIMANAGER_SOURCE)
 
 set(PUBLIC_HEADERS

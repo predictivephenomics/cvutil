@@ -29,6 +29,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(ENABLE_AVX512 "Enable AVX-512 support" OFF) # To be enabled on x86_64 server processors
 option(ENABLE_AVX2_FMA "Enable AVX2 and FMA support" ON) # Default support for x86_64 desktop processors
 
+# Option to enable mimalloc for Release builds
+option(USE_MIMALLOC "Use mimalloc allocator for Release builds" ON)
+
 # Detect the OS
 if(WIN32)
     message(STATUS "Configuring for Windows")
@@ -43,7 +46,7 @@ message(STATUS "Using ${CMAKE_CXX_COMPILER_ID} as the C++ compiler")
 # Create an interface library for compiler flags (modern CMake approach)
 add_library(cvutil_compiler_flags INTERFACE)
 
-    # MSVC-specific flags
+# MSVC-specific flags
 target_compile_options(cvutil_compiler_flags INTERFACE
     $<$<CXX_COMPILER_ID:MSVC>:
         $<$<CONFIG:Debug>:/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address>
@@ -96,6 +99,57 @@ target_link_options(cvutil_compiler_flags INTERFACE
 #         message(WARNING "ASAN import library not found in ${COMPILER_DIR}")
 #     endif()
 # endif()
+
+# Build mimalloc for both Debug and Release builds using ExternalProject
+if(USE_MIMALLOC)
+    include(ExternalProject)
+    
+    message(STATUS "Building mimalloc as external project (will be linked for Debug and Release configurations)...")
+    
+    # Determine build directory for mimalloc
+    set(MIMALLOC_PREFIX ${CMAKE_BINARY_DIR}/_external/mimalloc)
+    set(MIMALLOC_INSTALL_DIR ${MIMALLOC_PREFIX}/install)
+    
+    # Use ExternalProject_Add for complete control - this excludes mimalloc from install
+    # Build for both Debug (with ASAN tracking) and Release (without ASAN)
+    ExternalProject_Add(
+        mimalloc_external
+        GIT_REPOSITORY https://github.com/microsoft/mimalloc.git
+        GIT_TAG v2.2.4
+        PREFIX ${MIMALLOC_PREFIX}
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=$<CONFIG>
+            -DMI_BUILD_SHARED=ON
+            -DMI_BUILD_STATIC=OFF
+            -DMI_BUILD_TESTS=OFF
+            -DMI_BUILD_OBJECT=OFF
+            -DMI_OVERRIDE=ON
+            # $<$<CONFIG:Debug>:-DMI_TRACK_ASAN=ON>
+            # $<$<CONFIG:Debug>:-DMI_SHOW_ERRORS=ON>
+            -DCMAKE_INSTALL_PREFIX=${MIMALLOC_INSTALL_DIR}
+        BUILD_BYPRODUCTS
+            ${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll
+            ${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll
+            ${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dll.lib
+    )
+    
+    # Create imported target for linking
+    add_library(mimalloc SHARED IMPORTED GLOBAL)
+    add_dependencies(mimalloc mimalloc_external)
+    set_target_properties(mimalloc PROPERTIES
+        IMPORTED_LOCATION ${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll
+        IMPORTED_IMPLIB ${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dll.lib
+    )
+    
+    # Create imported target for mimalloc-redirect
+    add_library(mimalloc-redirect SHARED IMPORTED GLOBAL)
+    add_dependencies(mimalloc-redirect mimalloc_external)
+    set_target_properties(mimalloc-redirect PROPERTIES
+        IMPORTED_LOCATION ${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll
+    )
+    
+    message(STATUS "mimalloc external project configured")
+endif()
 
 # Find OpenCV
 find_package(OpenCV REQUIRED)
@@ -173,6 +227,17 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         else()
             message(WARNING "AddressSanitizer DLL not found. Debug builds may fail to run.")
         endif()
+    endif()
+    
+    # Install mimalloc DLLs if used (only runtime DLLs, no headers/cmake files)
+    if(USE_MIMALLOC)
+        install(FILES 
+            ${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll
+            ${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll
+            CONFIGURATIONS Release
+            DESTINATION bin
+            COMPONENT runtime
+        )
     endif()
     
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -328,6 +393,10 @@ install(EXPORT cvutilTargets
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cvutil
     COMPONENT development
 )
+
+# Note: mimalloc is NOT exported in cvutilTargets
+# It's an internal dependency that gets loaded automatically via DLL dependencies
+# Applications should NOT link to cvutil::mimalloc - it doesn't exist
 
 # Add to your root CMakeLists.txt
 configure_file(
