@@ -255,7 +255,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         -D TARGET_FILE=$<TARGET_FILE:cvutil>
         -D INSTALL_BIN=${CMAKE_INSTALL_PREFIX}/$<IF:$<BOOL:${WIN32}>,bin,lib/cvutil>
         -D SEARCH_DIRS="${RUNTIME_SEARCH_DIRS}"
-        -D EXTRA_RUNTIME_DEPS="$<$<AND:$<BOOL:${USE_MIMALLOC}>,$<CONFIG:Release>>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll;${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll>$<$<CONFIG:Debug>:;${ASAN_RUNTIME_DEP}>"
+        -D EXTRA_RUNTIME_DEPS="$<$<AND:$<BOOL:${USE_MIMALLOC}>,$<CONFIG:Release>>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll;${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll>"
         -D BUILD_CONFIG=$<CONFIG>
         -D BINARY_DIR=${CMAKE_BINARY_DIR}
         -P "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/find_runtime_deps.cmake"
