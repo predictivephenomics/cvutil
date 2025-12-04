@@ -54,9 +54,13 @@ target_link_libraries(RoiManager
 
 # Link mimalloc for Release builds only
 if(USE_MIMALLOC)
-    target_link_libraries(RoiManager PRIVATE $<$<CONFIG:Release>:mimalloc>)
-    target_link_options(RoiManager PRIVATE $<$<CONFIG:Release>:/INCLUDE:mi_version>)
-    message(STATUS "RoiManager will use mimalloc shared library for Release configuration")
+    if(TARGET mimalloc)
+        target_link_libraries(RoiManager PRIVATE $<$<CONFIG:Release>:mimalloc>)
+        target_link_options(RoiManager PRIVATE $<$<CONFIG:Release>:/INCLUDE:mi_version>)
+        message(STATUS "RoiManager will use mimalloc shared library for Release configuration")
+    else()
+        message(WARNING "USE_MIMALLOC is ON but mimalloc target not found!")
+    endif()
 endif()
 
 target_compile_definitions(RoiManager PRIVATE ROIMANAGER_SOURCE)
