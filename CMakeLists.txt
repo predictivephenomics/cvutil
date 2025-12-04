@@ -104,7 +104,7 @@ target_link_options(cvutil_compiler_flags INTERFACE
 if(USE_MIMALLOC)
     include(ExternalProject)
     
-    message(STATUS "Building mimalloc as external project (will be linked for Debug and Release configurations)...")
+    message(STATUS "Building mimalloc as external project (will be linked for Release configuration)...")
     
     # Determine build directory for mimalloc
     set(MIMALLOC_PREFIX ${CMAKE_BINARY_DIR}/_external/mimalloc)
