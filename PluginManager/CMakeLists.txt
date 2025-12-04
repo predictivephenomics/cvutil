@@ -59,6 +59,17 @@ target_link_libraries(PluginManager
         Qt6::OpenGL
 )
 
+# Link mimalloc for Release builds only
+if(USE_MIMALLOC)
+    if(TARGET mimalloc)
+        target_link_libraries(PluginManager PRIVATE $<$<CONFIG:Release>:mimalloc>)
+        target_link_options(PluginManager PRIVATE $<$<CONFIG:Release>:/INCLUDE:mi_version>)
+        message(STATUS "PluginManager will use mimalloc shared library for Release configuration")
+    else()
+        message(WARNING "USE_MIMALLOC is ON but mimalloc target not found!")
+    endif()
+endif()
+
 target_compile_definitions(PluginManager PRIVATE PLUGINMANAGER_SOURCE)
 
 set(PUBLIC_HEADERS

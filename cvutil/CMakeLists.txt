@@ -120,6 +120,18 @@ target_link_libraries(cvutil
         RoiManager
 )
 
+# Link mimalloc for Release builds only
+if(USE_MIMALLOC)
+    if(TARGET mimalloc)
+        target_link_libraries(cvutil PRIVATE $<$<CONFIG:Release>:mimalloc>)
+        # Force the linker to include mimalloc.dll as a dependency
+        target_link_options(cvutil PRIVATE $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/INCLUDE:mi_version>)
+        message(STATUS "cvutil will use mimalloc shared library for Release configuration")
+    else()
+        message(WARNING "USE_MIMALLOC is ON but mimalloc target not found!")
+    endif()
+endif()
+
 target_compile_definitions(cvutil PRIVATE CVUTIL_SOURCE)
 
 set(PUBLIC_HEADERS
@@ -233,11 +245,17 @@ endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # Build search directories list for runtime dependency detection
     set(RUNTIME_SEARCH_DIRS ${DEP_PATH})
+    if(USE_MIMALLOC AND TARGET mimalloc)
+        # Add mimalloc install directory to search paths
+        list(APPEND RUNTIME_SEARCH_DIRS ${MIMALLOC_INSTALL_DIR}/bin)
+    endif()
+    
     add_custom_command(TARGET cvutil POST_BUILD
     COMMAND ${CMAKE_COMMAND}
         -D TARGET_FILE=$<TARGET_FILE:cvutil>
         -D INSTALL_BIN=${CMAKE_INSTALL_PREFIX}/$<IF:$<BOOL:${WIN32}>,bin,lib/cvutil>
         -D SEARCH_DIRS="${RUNTIME_SEARCH_DIRS}"
+        -D EXTRA_RUNTIME_DEPS="$<IF:$<AND:$<BOOL:${USE_MIMALLOC}>,$<CONFIG:Release>>,${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll;${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll,>"
         -D BUILD_CONFIG=$<CONFIG>
         -D BINARY_DIR=${CMAKE_BINARY_DIR}
         -P "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/find_runtime_deps.cmake"
