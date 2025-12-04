@@ -125,7 +125,7 @@ if(USE_MIMALLOC)
     if(TARGET mimalloc)
         target_link_libraries(cvutil PRIVATE $<$<CONFIG:Release>:mimalloc>)
         # Force the linker to include mimalloc.dll as a dependency
-        target_link_options(cvutil PRIVATE $<$<CONFIG:Release>:/INCLUDE:mi_version>)
+        target_link_options(cvutil PRIVATE $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/INCLUDE:mi_version>)
         message(STATUS "cvutil will use mimalloc shared library for Release configuration")
     else()
         message(WARNING "USE_MIMALLOC is ON but mimalloc target not found!")
