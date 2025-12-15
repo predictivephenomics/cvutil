@@ -270,7 +270,7 @@ Mat bwthin_helper::bwthin_st(Mat inputc, Mat subs, Mat inds)
                 __X6 = DIRECT_ACCESS(S_ROW + 1, S_COL);
                 __X7 = DIRECT_ACCESS(S_ROW + 1, S_COL + 1);
 
-                if (lut1[LUT_KEY])
+                if ((LUT_KEY < 256) && lut1[LUT_KEY])
                 {
                     _P = 0;
                     S_CURR = 0;
@@ -314,7 +314,7 @@ Mat bwthin_helper::bwthin_st(Mat inputc, Mat subs, Mat inds)
                 __X6 = DIRECT_ACCESS(S_ROW + 1, S_COL);
                 __X7 = DIRECT_ACCESS(S_ROW + 1, S_COL + 1);
 
-                if (lut2[LUT_KEY])
+                if ((LUT_KEY < 256) & lut2[LUT_KEY])
                 {
                     _P = 0;
                     S_CURR = 0;
@@ -391,7 +391,7 @@ void bwthin_thread_apply_lut(void *_pdata)
                 __X6 = DIRECT_ACCESS(S_ROW + 1, S_COL);
                 __X7 = DIRECT_ACCESS(S_ROW + 1, S_COL + 1);
 
-                if (lut1[LUT_KEY])
+                if ((LUT_KEY < 256) && lut1[LUT_KEY])
                 {
                     _P = 0;
                     S_CURR = 0;
@@ -449,7 +449,7 @@ void bwthin_thread_apply_lut(void *_pdata)
                     SPARSE_ACCESS(S_ROW + 1, S_COL + 1, 1, __X7);
                 }
                 
-                if (lut1[LUT_KEY])
+                if ((LUT_KEY <= 256) && lut1[LUT_KEY])
                 {
                     _P = 0;
                     S_CURR = 0;
@@ -491,7 +491,7 @@ void bwthin_thread_apply_lut(void *_pdata)
                 __X6 = DIRECT_ACCESS(S_ROW + 1, S_COL);
                 __X7 = DIRECT_ACCESS(S_ROW + 1, S_COL + 1);
 
-                if (lut2[LUT_KEY])
+                if ((LUT_KEY < 256) && lut2[LUT_KEY])
                 {
                     _P = 0;
                     S_CURR = 0;
@@ -549,7 +549,7 @@ void bwthin_thread_apply_lut(void *_pdata)
                     SPARSE_ACCESS(S_ROW + 1, S_COL + 1, 1, __X7);
                 }
 
-                if (lut2[LUT_KEY])
+                if ((LUT_KEY < 256) && lut2[LUT_KEY])
                 {
                     _P = 0;
                     S_CURR = 0;
