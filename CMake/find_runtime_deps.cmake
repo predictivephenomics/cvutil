@@ -87,3 +87,23 @@ if(unresolved)
     endif()
   endforeach()
 endif()
+
+# Add any additional runtime dependencies that weren't auto-detected
+# This is passed as EXTRA_RUNTIME_DEPS variable
+if(DEFINED EXTRA_RUNTIME_DEPS)
+  foreach(extra_dep IN LISTS EXTRA_RUNTIME_DEPS)
+    if(EXISTS "${extra_dep}")
+      get_filename_component(dep_name "${extra_dep}" NAME)
+      set(dest "${INSTALL_BIN}/${dep_name}")
+      if(NOT EXISTS "${dest}")
+        file(INSTALL "${extra_dep}" DESTINATION "${INSTALL_BIN}")
+        message(STATUS "Copied extra dependency: ${dep_name}")
+      else()
+        message(STATUS "Extra dependency already exists: ${dep_name}")
+      endif()
+      # Add to the runtime dependencies list
+      file(APPEND "${BINARY_DIR}/cvutil_runtime_dependencies-${BUILD_CONFIG}.cmake" 
+           "set(CVUTIL_RUNTIME_DEPENDENCIES \"\${CVUTIL_RUNTIME_DEPENDENCIES};\${CMAKE_CURRENT_LIST_DIR}/../../../bin/${dep_name}\")\n")
+    endif()
+  endforeach()
+endif()

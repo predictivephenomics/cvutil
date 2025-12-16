@@ -200,7 +200,7 @@ void horizontal_st_avx(Mat& result, Mat& arrmat, int tid = -1)
             tbuf1 = _mm256_add_epi32(tbuf1, tbuf2);
         }
         else // Normal code for the last unaligned elements.
-            for (p = 0; p < (nend - i + 1); p++)
+            for (p = 0; p < (nend - i); p++)
                 a[i + p] = (i + p) * ncol;
     }
 

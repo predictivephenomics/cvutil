@@ -1,5 +1,22 @@
 cmake_minimum_required(VERSION 3.28)
 
+# Set the preferred compilers in order of priority (must be before project())
+if(NOT DEFINED CMAKE_CXX_COMPILER)
+    find_program(CLANG_COMPILER NAMES clang++ clang)
+    find_program(GCC_COMPILER NAMES g++ gcc)
+    find_program(MSVC_COMPILER NAMES cl)
+
+    if(CLANG_COMPILER)
+        set(CMAKE_CXX_COMPILER ${CLANG_COMPILER} CACHE FILEPATH "C++ compiler")
+    elseif(GCC_COMPILER)
+        set(CMAKE_CXX_COMPILER ${GCC_COMPILER} CACHE FILEPATH "C++ compiler")
+    elseif(MSVC_COMPILER)
+        set(CMAKE_CXX_COMPILER ${MSVC_COMPILER} CACHE FILEPATH "C++ compiler")
+    else()
+        message(FATAL_ERROR "No suitable compiler found")
+    endif()
+endif()
+
 # Define the project
 project(cvutil VERSION "2.5.0" DESCRIPTION "Computer Vision UTILity Toolkit" LANGUAGES CXX)
 
@@ -8,26 +25,12 @@ set(CVUTIL_PROJECT "cvutil" CACHE STRING "CVUTIL project")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set the preferred compilers in order of priority
-if(NOT CMAKE_CXX_COMPILER)
-    find_program(CLANG_COMPILER NAMES clang++ clang)
-    find_program(GCC_COMPILER NAMES g++ gcc)
-    find_program(MSVC_COMPILER NAMES cl)
-
-    if(CLANG_COMPILER)
-        set(CMAKE_CXX_COMPILER ${CLANG_COMPILER})
-    elseif(GCC_COMPILER)
-        set(CMAKE_CXX_COMPILER ${GCC_COMPILER})
-    elseif(MSVC_COMPILER)
-        set(CMAKE_CXX_COMPILER ${MSVC_COMPILER})
-    else()
-        message(FATAL_ERROR "No suitable compiler found")
-    endif()
-endif()
-
 # Options to enable or disable AVX-512 and AVX2/FMA support
 option(ENABLE_AVX512 "Enable AVX-512 support" OFF) # To be enabled on x86_64 server processors
 option(ENABLE_AVX2_FMA "Enable AVX2 and FMA support" ON) # Default support for x86_64 desktop processors
+
+# Option to enable mimalloc for Release builds
+option(USE_MIMALLOC "Use mimalloc allocator for Release builds" ON)
 
 # Detect the OS
 if(WIN32)
@@ -40,57 +43,111 @@ endif()
 
 message(STATUS "Using ${CMAKE_CXX_COMPILER_ID} as the C++ compiler")
 
-# Set global CMake build options
-if(MSVC) # OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # MSVC-specific flags
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /Zi /Ob0 /Od /RTC1 /DDEBUG /D_CRT_SECURE_NO_WARNINGS")
-    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /DEBUG /INCREMENTAL")
+# Create an interface library for compiler flags (modern CMake approach)
+add_library(cvutil_compiler_flags INTERFACE)
+
+# MSVC-specific flags
+target_compile_options(cvutil_compiler_flags INTERFACE
+    $<$<CXX_COMPILER_ID:MSVC>:
+        $<$<CONFIG:Debug>:/MDd /Zi /Ob0 /Od /RTC1 /fsanitize=address>
+        $<$<CONFIG:Release>:/MD /Ox>
+        /fp:precise /fp:strict
+        $<$<BOOL:${ENABLE_AVX512}>:/arch:AVX512>
+        $<$<BOOL:${ENABLE_AVX2_FMA}>:/arch:AVX2>
+    >
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+        $<$<CONFIG:Debug>:-g -O0 -fsanitize=address>
+        $<$<CONFIG:Release>:-O3>
+        -fno-fast-math -frounding-math
+        $<$<BOOL:${ENABLE_AVX512}>:-mavx512f>
+        $<$<BOOL:${ENABLE_AVX2_FMA}>:-mavx2 -mfma>
+    >
+)
+
+target_compile_definitions(cvutil_compiler_flags INTERFACE
+    $<$<CXX_COMPILER_ID:MSVC>:
+        $<$<CONFIG:Debug>:DEBUG;_CRT_SECURE_NO_WARNINGS>
+        $<$<CONFIG:Release>:NDEBUG>
+    >
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+        $<$<CONFIG:Debug>:DEBUG;_DEBUG>
+        $<$<CONFIG:Release>:NDEBUG>
+    >
+)
+
+target_link_options(cvutil_compiler_flags INTERFACE
+    $<$<CXX_COMPILER_ID:MSVC>:
+        $<$<CONFIG:Debug>:/DEBUG /INCREMENTAL> # /INFERASANLIBS:NO
+        $<$<CONFIG:Release>:/OPT:REF /OPT:ICF>
+    >
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:
+        $<$<CONFIG:Debug>:-fsanitize=address>
+    >
+)
+
+# # Find and link the ASAN runtime library for Debug builds with MSVC
+# if(MSVC)
+#     # Find the ASAN import library
+#     get_filename_component(COMPILER_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
+#     file(GLOB ASAN_LIB "${COMPILER_DIR}/clang_rt.asan_dynamic-x86_64.lib")
+#     if(ASAN_LIB)
+#         target_link_libraries(cvutil_compiler_flags INTERFACE
+#             $<$<CONFIG:Debug>:${ASAN_LIB}>
+#         )
+#         message(STATUS "Found ASAN import library: ${ASAN_LIB}")
+#     else()
+#         message(WARNING "ASAN import library not found in ${COMPILER_DIR}")
+#     endif()
+# endif()
+
+# Build mimalloc for both Debug and Release builds using ExternalProject
+if(USE_MIMALLOC)
+    include(ExternalProject)
     
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /Ox /DNDEBUG")
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /OPT:REF /OPT:ICF")
+    message(STATUS "Building mimalloc as external project (will be linked for Release configuration)...")
     
-    # Enable AVX-512 and AVX2/FMA support
-    if(ENABLE_AVX512)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX512")
-    endif()
-    if(ENABLE_AVX2_FMA)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX2")
-    endif()
+    # Determine build directory for mimalloc
+    set(MIMALLOC_PREFIX ${CMAKE_BINARY_DIR}/_external/mimalloc)
+    set(MIMALLOC_INSTALL_DIR ${MIMALLOC_PREFIX}/install)
     
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:precise /fp:strict")
+    # Use ExternalProject_Add for complete control - this excludes mimalloc from install
+    # Build for both Debug (with ASAN tracking) and Release (without ASAN)
+    ExternalProject_Add(
+        mimalloc_external
+        GIT_REPOSITORY https://github.com/microsoft/mimalloc.git
+        GIT_TAG v2.2.4
+        PREFIX ${MIMALLOC_PREFIX}
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=Release
+            -DMI_BUILD_SHARED=ON
+            -DMI_BUILD_STATIC=OFF
+            -DMI_BUILD_TESTS=OFF
+            -DMI_BUILD_OBJECT=OFF
+            -DMI_OVERRIDE=ON
+            # $<$<CONFIG:Debug>:-DMI_TRACK_ASAN=ON>
+            # $<$<CONFIG:Debug>:-DMI_SHOW_ERRORS=ON>
+            -DCMAKE_INSTALL_PREFIX=${MIMALLOC_INSTALL_DIR}
+        BUILD_BYPRODUCTS
+            {MIMALLOC_INSTALL_DIR}/lib/libmimalloc.so
+    )
     
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -DDEBUG -D_DEBUG -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
+    # Create imported target for linking
+    add_library(mimalloc SHARED IMPORTED GLOBAL)
+    add_dependencies(mimalloc mimalloc_external)
+    set_target_properties(mimalloc PROPERTIES
+        IMPORTED_LOCATION
+           ${MIMALLOC_INSTALL_DIR}/lib/libmimalloc.so
+    )
     
-    # Enable AVX-512 and AVX2/FMA support
-    if(ENABLE_AVX512)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512")
-    endif()
-    if(ENABLE_AVX2_FMA)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma")
-    endif()
+    # Create imported target for mimalloc-redirect
+    add_library(mimalloc-redirect SHARED IMPORTED GLOBAL)
+    add_dependencies(mimalloc-redirect mimalloc_external)
+    set_target_properties(mimalloc-redirect PROPERTIES
+        IMPORTED_LOCATION
+            ${MIMALLOC_INSTALL_DIR}/lib/mimalloc-redirect.so
+    )
     
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-fast-math -frounding-math")
-    
-elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -DDEBUG -D_DEBUG -O0")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DNDEBUG")
-    
-    # Enable AVX-512 and AVX2/FMA support
-    if(ENABLE_AVX512)
-        message(STATUS "Enabling AVX-512 support")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx512")
-    endif()
-    if(ENABLE_AVX2_FMA)
-        message(STATUS "Enabling AVX2 and FMA support")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2 -mfma")
-    endif()
-    
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-fast-math -frounding-math")
-    
-else()
-    message(FATAL_ERROR "Unsupported compiler")
+    message(STATUS "mimalloc external project configured")
 endif()
 
 # Find OpenCV
@@ -128,11 +185,69 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     foreach(opencv_lib ${OpenCV_LIBS})
         install(FILES $<TARGET_FILE:${opencv_lib}> CONFIGURATIONS Debug Release DESTINATION bin)
     endforeach()
+
     if(Qt6_FOUND)
         foreach(qt_lib Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Charts Qt6::OpenGL Qt6::OpenGLWidgets)
             install(FILES $<TARGET_FILE:${qt_lib}> CONFIGURATIONS Debug Release DESTINATION bin)
         endforeach()
     endif()
+    
+    if(MSVC)
+        # Configurable path for MSVC LLVM bin directory
+        set(MSVC_LLVM_BIN_PATH "" CACHE PATH "Path to MSVC LLVM bin directory containing clang_rt.asan_dynamic-x86_64.dll")
+        
+        # Get the compiler directory and construct paths dynamically
+        get_filename_component(COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        
+        # Build list of search paths for ASAN DLL
+        # Relative paths navigate from compiler location to LLVM bin directory:
+        # - ../../bin: For clang-cl in VC/Tools/Llvm/x64/bin relative to MSVC compiler
+        # - ../../../bin: For alternative LLVM layouts
+        set(ASAN_SEARCH_PATHS
+            "${COMPILER_DIR}"
+            "${COMPILER_DIR}/../../../bin"
+            "${COMPILER_DIR}/../../bin"
+        )
+        
+        # Add user-specified path if provided
+        if(MSVC_LLVM_BIN_PATH)
+            list(APPEND ASAN_SEARCH_PATHS "${MSVC_LLVM_BIN_PATH}")
+        endif()
+        
+        # Add paths based on VSINSTALLDIR environment variable if available
+        if(DEFINED ENV{VSINSTALLDIR})
+            list(APPEND ASAN_SEARCH_PATHS "$ENV{VSINSTALLDIR}/VC/Tools/Llvm/x64/bin")
+        endif()
+        
+        # Add common VS installation paths as fallback (supporting different editions)
+        list(APPEND ASAN_SEARCH_PATHS
+            "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin"
+            "C:/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin"
+            "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin"
+        )
+        
+        # Find and install ASAN DLL for Debug builds
+        find_file(ASAN_DLL "clang_rt.asan_dynamic-x86_64.dll" 
+                  PATHS ${ASAN_SEARCH_PATHS}
+                  NO_DEFAULT_PATH)
+        if(ASAN_DLL)
+            install(FILES ${ASAN_DLL} CONFIGURATIONS Debug DESTINATION bin)
+        else()
+            message(WARNING "AddressSanitizer DLL not found. Debug builds may fail to run.")
+        endif()
+    endif()
+    
+    # Install mimalloc DLLs if used (only runtime DLLs, no headers/cmake files)
+    if(USE_MIMALLOC)
+        install(FILES 
+            ${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll
+            ${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll
+            CONFIGURATIONS Release
+            DESTINATION bin
+            COMPONENT runtime
+        )
+    endif()
+    
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # Set RPATH to include our bundled libraries
     # set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib/cvutil;\$ORIGIN/../lib;/usr/lib/x86_64-linux-gnu;/lib/x86_64-linux-gnu")
@@ -288,6 +403,10 @@ install(EXPORT cvutilTargets
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/cvutil
     COMPONENT development
 )
+
+# Note: mimalloc is NOT exported in cvutilTargets
+# It's an internal dependency that gets loaded automatically via DLL dependencies
+# Applications should NOT link to cvutil::mimalloc - it doesn't exist
 
 # Add to your root CMakeLists.txt
 configure_file(

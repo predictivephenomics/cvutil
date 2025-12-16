@@ -42,9 +42,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
           message(STATUS \"Installing \${dep}...\")
           if(EXISTS \"\${dep}\")
             message(STATUS \"Installing \${dep} to location ${target_bin_dir}...\")
-            # file(INSTALL \"\${dep}\" DESTINATION \"${target_bin_dir}\")
-            # Instead of file(INSTALL), use install(FILES ...) to register the file with the manifest.
-            install(FILES \"\${dep}\" DESTINATION \"${target_bin_dir}\")
+            file(INSTALL \"\${dep}\" DESTINATION \"${target_bin_dir}\")
+            # # Instead of file(INSTALL), use install(FILES ...) to register the file with the manifest.
+            # install(FILES \"\${dep}\" DESTINATION \"${target_bin_dir}\")
           else()
             message(STATUS \"\${dep} does not exist.\")
           endif()

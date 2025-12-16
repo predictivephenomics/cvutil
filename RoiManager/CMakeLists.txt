@@ -43,6 +43,7 @@ target_include_directories(RoiManager
 # Link Qt6 and OpenCV libraries, along with other dependencies
 target_link_libraries(RoiManager
     PRIVATE
+        cvutil_compiler_flags
         ${OpenCV_LIBS}
 )
 
@@ -55,6 +56,16 @@ if (Qt6_FOUND)
             Qt6::Gui
             Qt6::OpenGL
     )
+
+# Link mimalloc for Release builds only
+if(USE_MIMALLOC)
+    if(TARGET mimalloc)
+        target_link_libraries(RoiManager PRIVATE $<$<CONFIG:Release>:mimalloc>)
+        target_link_options(RoiManager PRIVATE $<$<CONFIG:Release>:/INCLUDE:mi_version>)
+        message(STATUS "RoiManager will use mimalloc shared library for Release configuration")
+    else()
+        message(WARNING "USE_MIMALLOC is ON but mimalloc target not found!")
+    endif()
 endif()
 
 target_compile_definitions(RoiManager PRIVATE ROIMANAGER_SOURCE)
@@ -63,27 +74,27 @@ set(PUBLIC_HEADERS
     include/RoiManager.h
 )
 
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/bin)
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/include)
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/lib)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/bin)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/include)
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/library/lib)
 
-# Set the output directories for the built targets
-set_target_properties(cvutil PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/bin/
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/bin/
+# # Set the output directories for the built targets
+# set_target_properties(cvutil PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/bin/
+#     RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/bin/
     
-    LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
-    LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
+#     LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
+#     LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
     
-    ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
-    ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
-)
+#     ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/library/lib/
+#     ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/library/lib/
+# )
 
-# Post-build events to copy DLL, lib, and headers to appropriate directories
-add_custom_command(TARGET RoiManager POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/RoiManager.h ${CMAKE_BINARY_DIR}/library/include/
-)
+# # Post-build events to copy DLL, lib, and headers to appropriate directories
+# add_custom_command(TARGET RoiManager POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         ${CMAKE_CURRENT_SOURCE_DIR}/include/RoiManager.h ${CMAKE_BINARY_DIR}/library/include/
+# )
 
 # # Install the RoiManager library for Debug configuration
 # install(TARGETS RoiManager
@@ -152,16 +163,16 @@ endif()
 
 message(STATUS "Dependency path: ${DEP_PATH}")
 
-# For the RoiManager target
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    add_custom_command(TARGET RoiManager POST_BUILD
-    COMMAND ${CMAKE_COMMAND}
-        -D TARGET_FILE=$<TARGET_FILE:RoiManager>
-        -D INSTALL_BIN=${CMAKE_INSTALL_PREFIX}/$<IF:$<BOOL:${WIN32}>,bin,lib/cvutil>
-        -D SEARCH_DIRS=${DEP_PATH}
-        -D BUILD_CONFIG=$<CONFIG>
-        -D BINARY_DIR=${CMAKE_BINARY_DIR}
-        -P "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/find_runtime_deps.cmake"
-    COMMENT "Copying runtime dependencies for RoiManager"
-    )
-endif()
+# # For the RoiManager target
+# if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+#     add_custom_command(TARGET RoiManager POST_BUILD
+#     COMMAND ${CMAKE_COMMAND}
+#         -D TARGET_FILE=$<TARGET_FILE:RoiManager>
+#         -D INSTALL_BIN=${CMAKE_INSTALL_PREFIX}/$<IF:$<BOOL:${WIN32}>,bin,lib/cvutil>
+#         -D SEARCH_DIRS=${DEP_PATH}
+#         -D BUILD_CONFIG=$<CONFIG>
+#         -D BINARY_DIR=${CMAKE_BINARY_DIR}
+#         -P "${CMAKE_CURRENT_SOURCE_DIR}/../CMake/find_runtime_deps.cmake"
+#     COMMENT "Copying runtime dependencies for RoiManager"
+#     )
+# endif()
