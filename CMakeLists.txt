@@ -128,7 +128,11 @@ if(USE_MIMALLOC)
             # $<$<CONFIG:Debug>:-DMI_SHOW_ERRORS=ON>
             -DCMAKE_INSTALL_PREFIX=${MIMALLOC_INSTALL_DIR}
         BUILD_BYPRODUCTS
-            {MIMALLOC_INSTALL_DIR}/lib/libmimalloc.so
+            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll>
+            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll>
+            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dll.lib>
+            $<$<PLATFORM_ID:Linux>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.so>
+            $<$<PLATFORM_ID:Darwin>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dylib>
     )
     
     # Create imported target for linking
@@ -136,7 +140,11 @@ if(USE_MIMALLOC)
     add_dependencies(mimalloc mimalloc_external)
     set_target_properties(mimalloc PROPERTIES
         IMPORTED_LOCATION
-           ${MIMALLOC_INSTALL_DIR}/lib/libmimalloc.so
+            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll>
+            $<$<PLATFORM_ID:Linux>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.so>
+            $<$<PLATFORM_ID:Darwin>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dylib>
+        IMPORTED_IMPLIB
+            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dll.lib>
     )
     
     # Create imported target for mimalloc-redirect
@@ -144,7 +152,9 @@ if(USE_MIMALLOC)
     add_dependencies(mimalloc-redirect mimalloc_external)
     set_target_properties(mimalloc-redirect PROPERTIES
         IMPORTED_LOCATION
-            ${MIMALLOC_INSTALL_DIR}/lib/mimalloc-redirect.so
+            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll>
+            $<$<PLATFORM_ID:Linux>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc-redirect.so>
+            $<$<PLATFORM_ID:Darwin>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc-redirect.dylib>
     )
     
     message(STATUS "mimalloc external project configured")
