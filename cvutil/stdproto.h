@@ -82,8 +82,10 @@ along with cvutil; see the file COPYING.  If not, see
 //#include <Windows.h>
 
 // UI facilities
+#ifdef BUILD_GUI
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QtWidgets>
+#endif
 
 #ifdef _MSC_VER
 #if (defined _WINDLL && defined CVUTIL_SOURCE)

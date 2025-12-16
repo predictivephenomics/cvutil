@@ -33,8 +33,10 @@ along with cvutil; see the file COPYING.  If not, see
 #include "cvutil_bwskel.h"
 #include "cvutil_types.h"
 
+#ifdef BUILD_GUI
 #include "MainWindow/MainWindow.h"
 #include "MainWindow/MaterialStyle.h"
+#endif
 
 using namespace std;
 using namespace cv;
@@ -311,6 +313,7 @@ vector<vector<int>> cvutil::getConnectedComponents(Mat img, Mat& lab, int size, 
     return result;
 }
 
+#ifdef BUILD_GUI
 void onMouse(int event, int _x, int _y, int flags, void *data)
 {
     if (event != EVENT_LBUTTONUP && //event != EVENT_MOUSEMOVE && 
@@ -441,6 +444,7 @@ void onMouse(int event, int _x, int _y, int flags, void *data)
 
     m.release();
 }
+#endif
 
 void cvutil::printheader(Mat m)
 {
@@ -454,6 +458,7 @@ void cvutil::printheader(Mat m)
         cout << m << endl;
 }
 
+#ifdef BUILD_GUI
 // Similar to imshow() in opencv, but has 
 //     * An onMouse event Handler.
 //     * We do not have to call namedWindow() before calling
@@ -502,6 +507,7 @@ void cvutil::window(cv::String winname, Mat m)
     setMouseCallback(winname, onMouse, static_cast<void*>(wd));
     waitKey(0);
 }
+#endif
 
 Mat cvutil::bwthin(Mat input)
 {
@@ -775,7 +781,7 @@ void cvutil::init(int &argc, char *argv[], bool useOpt, bool useGUI)
 {
     // Enable the OpenCV to use hardware acceleration.
     setUseOptimized(useOpt);
-
+#ifdef BUILD_GUI
     // Initialize Qt sub-system.
     if (useGUI)
     {
@@ -787,6 +793,7 @@ void cvutil::init(int &argc, char *argv[], bool useOpt, bool useGUI)
         GlobalValues::app = nullptr;
         GlobalValues::coreapp = new QCoreApplication(argc, argv);
     }
+#endif
     
     //QApplication::setStyle(new MaterialStyle());
 
@@ -888,6 +895,7 @@ Mat cvutil::getImageFromComponents(Size sz, vector<vector<int>> components)
     return result;
 }
 
+#ifdef BUILD_GUI
 Ptr<cvutilWindow> cvutil::getImageProcessorWindow(QIcon appico)
 {
     static MainWindow *result = nullptr;
@@ -902,20 +910,25 @@ Ptr<cvutilWindow> cvutil::getImageProcessorWindow(QIcon appico)
         return result;
     }
 }
+#endif
 
 Mat cvutil::imread(QString& filename, int flags)
 {
+#ifdef BUILD_GUI
     QFile file(filename);
     if (!file.open(QFile::ReadOnly))
         return Mat();
     QByteArray arr = file.readAll();
     file.close();
-
     return imdecode(vector<uchar>(arr.begin(), arr.end()), flags);
+#else
+    return imread(filename, flags);
+#endif
 }
 
 bool cvutil::imwrite(QString filename, Mat img, const std::vector<int> & params)
 {
+#ifdef BUILD_GUI
     if (filename.length() == 0)
     {
         qCritical() << "Cannot save the image.";
@@ -959,6 +972,9 @@ bool cvutil::imwrite(QString filename, Mat img, const std::vector<int> & params)
     file.write(arr);
     file.close();
 
+#else
+    bool result = imwrite(filename, img, params);
+#endif
     return result;
 }
 

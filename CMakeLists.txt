@@ -164,8 +164,13 @@ endif()
 find_package(OpenCV REQUIRED)
 
 # Find Qt6
-find_package(Qt6 REQUIRED COMPONENTS Core Charts Gui Widgets OpenGL)
+find_package(Qt6 COMPONENTS Core Charts Gui Widgets OpenGL)
+if(Qt6_FOUND)
 qt_standard_project_setup()
+add_compile_definitions(BUILD_GUI)
+else()
+message(WARNING "Qt6 not found, disabling the GUI.")
+endif()
 
 message(STATUS "Found CMAKE_INSTALL_BINDIR: ${CMAKE_INSTALL_BINDIR}")
 message(STATUS "Found CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
@@ -180,8 +185,10 @@ set(CMAKE_AUTOUIC ON)    # Enable automatic UIC
 
 # Add subdirectories for each project
 add_subdirectory(cvutil)
-add_subdirectory(PluginManager)
-add_subdirectory(RoiManager)
+if (Qt6_FOUND)
+  add_subdirectory(PluginManager)
+  add_subdirectory(RoiManager)
+endif()
 
 # Install OpenCV and Qt6 runtime shared libraries
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -189,9 +196,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         install(FILES $<TARGET_FILE:${opencv_lib}> CONFIGURATIONS Debug Release DESTINATION bin)
     endforeach()
 
-    foreach(qt_lib Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Charts Qt6::OpenGL Qt6::OpenGLWidgets)
-        install(FILES $<TARGET_FILE:${qt_lib}> CONFIGURATIONS Debug Release DESTINATION bin)
-    endforeach()
+    if(Qt6_FOUND)
+        foreach(qt_lib Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Charts Qt6::OpenGL Qt6::OpenGLWidgets)
+            install(FILES $<TARGET_FILE:${qt_lib}> CONFIGURATIONS Debug Release DESTINATION bin)
+        endforeach()
+    endif()
     
     if(MSVC)
         # Configurable path for MSVC LLVM bin directory
@@ -260,16 +269,16 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
     )
-    
-    set_target_properties(PluginManager PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-    )
-    
-    set_target_properties(RoiManager PROPERTIES
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR}
-    )
+    if (Qt6_FOUND)
+        set_target_properties(PluginManager PROPERTIES
+            VERSION ${PROJECT_VERSION}
+            SOVERSION ${PROJECT_VERSION_MAJOR}
+        )
+        set_target_properties(RoiManager PROPERTIES
+            VERSION ${PROJECT_VERSION}
+            SOVERSION ${PROJECT_VERSION_MAJOR}
+        )
+    endif()
     
     # foreach(opencv_lib ${OpenCV_LIBS})
     #     install(FILES $<TARGET_FILE:${opencv_lib}> CONFIGURATIONS Debug Release DESTINATION lib/cvutil COMPONENT runtime)
@@ -296,22 +305,24 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     endforeach()
 
     # Install PDB files for Qt6 libraries
-    foreach(qt_lib Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Charts Qt6::OpenGL Qt6::OpenGLWidgets)
-        get_target_property(pdb_path ${qt_lib} IMPORTED_PDB_LOCATION_DEBUG)
-        if (NOT pdb_path)
-            get_target_property(pdb_path ${qt_lib} IMPORTED_LOCATION_DEBUG)
-            if(pdb_path)
-                string(REPLACE ".dll" ".pdb" pdb_path ${pdb_path})
+    if (Qt6_FOUND)
+        foreach(qt_lib Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Charts Qt6::OpenGL Qt6::OpenGLWidgets)
+            get_target_property(pdb_path ${qt_lib} IMPORTED_PDB_LOCATION_DEBUG)
+            if (NOT pdb_path)
+                get_target_property(pdb_path ${qt_lib} IMPORTED_LOCATION_DEBUG)
+                if(pdb_path)
+                    string(REPLACE ".dll" ".pdb" pdb_path ${pdb_path})
+                endif()
             endif()
-        endif()
-        if(pdb_path AND EXISTS ${pdb_path})
-            install(FILES ${pdb_path} CONFIGURATIONS Debug DESTINATION bin)
-        endif()
-    endforeach()
+            if(pdb_path AND EXISTS ${pdb_path})
+                install(FILES ${pdb_path} CONFIGURATIONS Debug DESTINATION bin)
+            endif()
+        endforeach()
+    endif()
 endif()
 
 # Install Qt6 support plugins
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows" AND Qt6_FOUND)
     foreach(qt_plugin Qt6::QWindowsIntegrationPlugin)
         install(FILES $<TARGET_FILE:${qt_plugin}> CONFIGURATIONS Debug Release DESTINATION bin/platforms)
         # Copy pdb files for the plugins

@@ -53,6 +53,8 @@ along with cvutil; see the file COPYING.  If not, see
 #include "cvutil_matlab_interface.h"
 #include "video.h"
 #include "cvutil_templates.h"
+#ifdef BUILD_GUI
 #include "figure.h"
+#endif
 
 #endif

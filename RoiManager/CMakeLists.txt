@@ -45,12 +45,17 @@ target_link_libraries(RoiManager
     PRIVATE
         cvutil_compiler_flags
         ${OpenCV_LIBS}
-        Qt6::Core
-        Qt6::Widgets
-        Qt6::Charts
-        Qt6::Gui
-        Qt6::OpenGL
 )
+
+if (Qt6_FOUND)
+    target_link_libraries(RoiManager
+        PRIVATE
+            Qt6::Core
+            Qt6::Widgets
+            Qt6::Charts
+            Qt6::Gui
+            Qt6::OpenGL
+    )
 
 # Link mimalloc for Release builds only
 if(USE_MIMALLOC)
