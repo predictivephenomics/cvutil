@@ -59,8 +59,14 @@ along with cvutil; see the file COPYING.  If not, see
 #include <thread>
 #include <sys/stat.h>
 
-// Defaulting to Intel's AVX2 and FMA
+// Use native Intel intrinsics on x86/x64; SIMDe emulation on other architectures (e.g., Apple Silicon)
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #include <immintrin.h>
+#else
+#define SIMDE_ENABLE_NATIVE_ALIASES
+#include <simde/x86/avx2.h>
+#include <simde/x86/fma.h>
+#endif
 
 // #if defined(_MSC_VER) && !defined(__clang__)
 // #define M2I32(x, idx) (x).m256i_i32[(idx)]

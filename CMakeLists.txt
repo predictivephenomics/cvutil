@@ -32,6 +32,21 @@ option(ENABLE_AVX2_FMA "Enable AVX2 and FMA support" ON) # Default support for x
 # Option to enable mimalloc for Release builds
 option(USE_MIMALLOC "Use mimalloc allocator for Release builds" ON)
 
+# Disable x86-specific SIMD flags on non-x86 architectures (e.g., Apple Silicon arm64)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+    if(ENABLE_AVX512)
+        message(STATUS "Disabling AVX-512: not supported on ${CMAKE_SYSTEM_PROCESSOR}")
+        set(ENABLE_AVX512 OFF CACHE BOOL "Enable AVX-512 support" FORCE)
+    endif()
+    if(ENABLE_AVX2_FMA)
+        message(STATUS "Disabling AVX2/FMA: not supported on ${CMAKE_SYSTEM_PROCESSOR}, using SIMDe emulation")
+        set(ENABLE_AVX2_FMA OFF CACHE BOOL "Enable AVX2 and FMA support" FORCE)
+    endif()
+    set(CVUTIL_USE_SIMDE ON)
+else()
+    set(CVUTIL_USE_SIMDE OFF)
+endif()
+
 # Detect the OS
 if(WIN32)
     message(STATUS "Configuring for Windows")
@@ -112,6 +127,20 @@ if(USE_MIMALLOC)
     
     # Use ExternalProject_Add for complete control - this excludes mimalloc from install
     # Build for both Debug (with ASAN tracking) and Release (without ASAN)
+    if(WIN32)
+        set(MIMALLOC_LIB_PATH ${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll)
+        set(MIMALLOC_BYPRODUCTS
+            ${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll
+            ${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll
+            ${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dll.lib)
+    elseif(APPLE)
+        set(MIMALLOC_LIB_PATH ${MIMALLOC_INSTALL_DIR}/lib/libmimalloc.dylib)
+        set(MIMALLOC_BYPRODUCTS ${MIMALLOC_INSTALL_DIR}/lib/libmimalloc.dylib)
+    else()
+        set(MIMALLOC_LIB_PATH ${MIMALLOC_INSTALL_DIR}/lib/libmimalloc.so)
+        set(MIMALLOC_BYPRODUCTS ${MIMALLOC_INSTALL_DIR}/lib/libmimalloc.so)
+    endif()
+
     ExternalProject_Add(
         mimalloc_external
         GIT_REPOSITORY https://github.com/microsoft/mimalloc.git
@@ -127,36 +156,23 @@ if(USE_MIMALLOC)
             # $<$<CONFIG:Debug>:-DMI_TRACK_ASAN=ON>
             # $<$<CONFIG:Debug>:-DMI_SHOW_ERRORS=ON>
             -DCMAKE_INSTALL_PREFIX=${MIMALLOC_INSTALL_DIR}
-        BUILD_BYPRODUCTS
-            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll>
-            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll>
-            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dll.lib>
-            $<$<PLATFORM_ID:Linux>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.so>
-            $<$<PLATFORM_ID:Darwin>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dylib>
+        BUILD_BYPRODUCTS ${MIMALLOC_BYPRODUCTS}
     )
-    
+
     # Create imported target for linking
     add_library(mimalloc SHARED IMPORTED GLOBAL)
     add_dependencies(mimalloc mimalloc_external)
-    set_target_properties(mimalloc PROPERTIES
-        IMPORTED_LOCATION
-            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc.dll>
-            $<$<PLATFORM_ID:Linux>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.so>
-            $<$<PLATFORM_ID:Darwin>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dylib>
-        IMPORTED_IMPLIB
-            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dll.lib>
-    )
-    
-    # Create imported target for mimalloc-redirect
-    add_library(mimalloc-redirect SHARED IMPORTED GLOBAL)
-    add_dependencies(mimalloc-redirect mimalloc_external)
-    set_target_properties(mimalloc-redirect PROPERTIES
-        IMPORTED_LOCATION
-            $<$<PLATFORM_ID:Windows>:${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll>
-            $<$<PLATFORM_ID:Linux>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc-redirect.so>
-            $<$<PLATFORM_ID:Darwin>:${MIMALLOC_INSTALL_DIR}/lib/mimalloc-redirect.dylib>
-    )
-    
+    set_target_properties(mimalloc PROPERTIES IMPORTED_LOCATION ${MIMALLOC_LIB_PATH})
+    if(WIN32)
+        set_target_properties(mimalloc PROPERTIES
+            IMPORTED_IMPLIB ${MIMALLOC_INSTALL_DIR}/lib/mimalloc.dll.lib)
+        # mimalloc-redirect is Windows-only (OSX uses zone interpose instead)
+        add_library(mimalloc-redirect SHARED IMPORTED GLOBAL)
+        add_dependencies(mimalloc-redirect mimalloc_external)
+        set_target_properties(mimalloc-redirect PROPERTIES
+            IMPORTED_LOCATION ${MIMALLOC_INSTALL_DIR}/bin/mimalloc-redirect.dll)
+    endif()
+
     message(STATUS "mimalloc external project configured")
 endif()
 
@@ -166,6 +182,15 @@ find_package(OpenCV REQUIRED)
 # Find Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Charts Gui Widgets OpenGL)
 qt_standard_project_setup()
+
+# Add SIMDe include path for portable SIMD on non-x86 platforms
+if(CVUTIL_USE_SIMDE)
+    find_path(SIMDE_INCLUDE_DIR simde/x86/avx2.h REQUIRED
+        HINTS ${CMAKE_PREFIX_PATH} $ENV{CONDA_PREFIX}
+        PATH_SUFFIXES include)
+    message(STATUS "Found SIMDe headers: ${SIMDE_INCLUDE_DIR}")
+    target_include_directories(cvutil_compiler_flags INTERFACE ${SIMDE_INCLUDE_DIR})
+endif()
 
 message(STATUS "Found CMAKE_INSTALL_BINDIR: ${CMAKE_INSTALL_BINDIR}")
 message(STATUS "Found CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
@@ -278,6 +303,46 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # foreach(qt_lib Qt6::Core Qt6::Widgets Qt6::Gui Qt6::Charts Qt6::OpenGL Qt6::OpenGLWidgets)
     #     install(FILES $<TARGET_FILE:${qt_lib}> CONFIGURATIONS Debug Release DESTINATION lib/cvutil COMPONENT runtime)
     # endforeach()
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(CMAKE_INSTALL_RPATH "@loader_path/../lib")
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
+    set_target_properties(cvutil PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+        MACOSX_RPATH ON
+    )
+
+    set_target_properties(PluginManager PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+        MACOSX_RPATH ON
+    )
+
+    set_target_properties(RoiManager PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR}
+        MACOSX_RPATH ON
+    )
+
+    if(USE_MIMALLOC)
+        install(FILES
+            ${MIMALLOC_INSTALL_DIR}/lib/libmimalloc.dylib
+            CONFIGURATIONS Release
+            DESTINATION lib
+            COMPONENT runtime
+        )
+    endif()
+
+    # Qt6 platform plugin for macOS (Cocoa)
+    # if(TARGET Qt6::QCocoaIntegrationPlugin)
+    #     install(FILES $<TARGET_FILE:Qt6::QCocoaIntegrationPlugin>
+    #             CONFIGURATIONS Debug Release
+    #             DESTINATION lib/platforms
+    #             COMPONENT runtime)
+    # endif()
+
 endif()
 
 # Install PDB files for OpenCV libraries

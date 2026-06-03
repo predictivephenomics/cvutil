@@ -227,6 +227,23 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             COMPONENT development
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cvutil
     )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    install(TARGETS cvutil
+        EXPORT cvutilTargets
+        CONFIGURATIONS Debug Release
+        RUNTIME
+            COMPONENT runtime
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY
+            COMPONENT runtime
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE
+            COMPONENT development
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER
+            COMPONENT development
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cvutil
+    )
 endif()
 
 # Install public headers

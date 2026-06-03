@@ -56,7 +56,7 @@ target_link_libraries(RoiManager
 if(USE_MIMALLOC)
     if(TARGET mimalloc)
         target_link_libraries(RoiManager PRIVATE $<$<CONFIG:Release>:mimalloc>)
-        target_link_options(RoiManager PRIVATE $<$<CONFIG:Release>:/INCLUDE:mi_version>)
+        target_link_options(RoiManager PRIVATE $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/INCLUDE:mi_version>)
         message(STATUS "RoiManager will use mimalloc shared library for Release configuration")
     else()
         message(WARNING "USE_MIMALLOC is ON but mimalloc target not found!")
@@ -139,6 +139,23 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
             COMPONENT development
             DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER 
+            COMPONENT development
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cvutil
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    install(TARGETS RoiManager
+        EXPORT cvutilTargets
+        CONFIGURATIONS Debug Release
+        RUNTIME
+            COMPONENT runtime
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY
+            COMPONENT runtime
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE
+            COMPONENT development
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER
             COMPONENT development
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/cvutil
     )
