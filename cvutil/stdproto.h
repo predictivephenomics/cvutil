@@ -35,9 +35,10 @@ along with cvutil; see the file COPYING.  If not, see
 #pragma warning(push, 0)
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
-#include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgproc.hpp>
-#include <opencv2/imgproc/imgproc_c.h>
+#if CV_VERSION_MAJOR >= 5
+#include <opencv2/geometry.hpp>
+#endif
 #include <opencv2/videoio.hpp>
 
 #include <cmath>

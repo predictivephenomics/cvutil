@@ -608,7 +608,9 @@ Mat cvutil::getMat(InputArray y)
     {
     case _InputArray::MAT:
     case _InputArray::MATX:
+#if CV_VERSION_MAJOR < 5
     case _InputArray::EXPR:
+#endif
     case _InputArray::STD_VECTOR:
     case _InputArray::UMAT:
         result = y.getMat();
@@ -865,7 +867,7 @@ void cvutil::drawText(Mat &GeomLayer, const string & text, Point org, Scalar col
         for (int i = 0; i < clines.size(); i++)
         {
             Point p(org.x, org.y + sz.height * i);
-            putText(GeomLayer, clines[i], p, fontname, fontsize, s, thickness, CV_AA);
+            putText(GeomLayer, clines[i], p, fontname, fontsize, s, thickness, cv::LINE_AA);
         }
 
         // Finally update the size of the geometry drawn.
@@ -873,7 +875,7 @@ void cvutil::drawText(Mat &GeomLayer, const string & text, Point org, Scalar col
         sz.height *= static_cast<int>(clines.size());
     }
     else
-        putText(GeomLayer, text, org, fontname, fontsize, s, thickness, CV_AA);
+        putText(GeomLayer, text, org, fontname, fontsize, s, thickness, cv::LINE_AA);
 }
 
 Mat cvutil::getImageFromComponents(Size sz, vector<vector<int>> components)
